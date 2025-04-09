@@ -1,17 +1,15 @@
-//
-//  FlowmodachiApp.swift
-//  Flowmodachi
-//
-//  Created by Jess Ramirez on 4/9/25.
-//
-
 import SwiftUI
 
 @main
 struct FlowmodachiApp: App {
+    // We’ll bridge SwiftUI with AppKit using this helper
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        // No UI scene (like WindowGroup) — this is menu bar only
+        Settings {
+            EmptyView()
         }
     }
 }
+
