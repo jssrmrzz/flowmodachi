@@ -1,0 +1,16 @@
+# Xcode
+.DS_Store
+build/
+DerivedData/
+*.xcuserstate
+*.xcworkspace
+*.xcuserdata
+*.xcodeproj/project.xcworkspace/xcuserdata
+
+# SwiftPM
+.swiftpm/
+Package.resolved
+
+# macOS trash files
+*.swp
+*.lock
