@@ -68,11 +68,11 @@ struct FlowmodachiVisualView: View {
                 isPulsing = true
             }
         }
-        .onChange(of: elapsedSeconds) { _ in
+        .onChange(of: elapsedSeconds) {
             updateStage()
         }
-        .onChange(of: isSleeping) { newValue in
-            isPulsing = newValue
+        .onChange(of: isSleeping) {
+            isPulsing = isSleeping
         }
     }
 
