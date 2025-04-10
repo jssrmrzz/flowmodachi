@@ -6,24 +6,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var popover: NSPopover!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // 1. Create the SwiftUI view for the popover
-        let contentView = MenuBarContentView()
+        // 🔧 Enable debug animation mode in development builds
+        #if DEBUG
+        UserDefaults.standard.set(true, forKey: "debugStreakAnimation")
+        print("✅ Debug streak animation enabled")
+        #endif
 
-        // 2. Set up the popover with that view
-        popover = NSPopover()
-        popover.contentSize = NSSize(width: 300, height: 200)
-        popover.behavior = .transient
-        popover.contentViewController = NSHostingController(rootView: contentView)
-
-        // 3. Create the status item in the menu bar
+        // 🧩 Create and configure the status bar item (menu bar icon)
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-
+        
         if let button = statusItem.button {
             button.image = NSImage(systemSymbolName: "face.dashed", accessibilityDescription: "Flowmodachi")
+            button.image?.isTemplate = true // Ensures image adapts to light/dark mode
+        }
+
+        // 🧠 Attach the SwiftUI view to the menu bar popover
+        popover = NSPopover()
+        let contentView = MenuBarContentView()
+
+        popover.contentSize = NSSize(width: 280, height: 360)
+        popover.behavior = .transient // Closes when user clicks outside
+        popover.contentViewController = NSHostingController(rootView: contentView)
+
+        // 📎 Link the popover to the status item
+        if let button = statusItem.button {
             button.action = #selector(togglePopover(_:))
             button.target = self
         }
     }
+
 
     @objc func togglePopover(_ sender: AnyObject?) {
         if let button = statusItem.button {

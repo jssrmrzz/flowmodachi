@@ -2,6 +2,9 @@ import SwiftUI
 
 struct StreakView: View {
     @State private var animateToday = false
+    @AppStorage("debugStreakAnimation") private var debugStreakAnimation = false
+
+
     
     
     let sessions: [FlowSession]
@@ -53,13 +56,12 @@ struct StreakView: View {
                             .scaledToFit()
                             .frame(width: 18, height: 18)
                             .foregroundColor(.yellow)
-                            .scaleEffect(isToday(day) && animateToday ? 1.4 : 1.0)
-                            .animation(
-                                isToday(day) && animateToday ?
-                                    .interpolatingSpring(stiffness: 120, damping: 8).delay(0.2) :
-                                        .default,
-                                value: animateToday
-                            )
+                            .scaleEffect(isToday(day) && animateToday ? 1.25 : 1.0)
+                            .opacity(isToday(day) && animateToday ? 0 : 1)
+                            .transition(.scale)
+                            .animation(.interpolatingSpring(stiffness: 100, damping: 10).delay(0.1), value: animateToday)
+
+
                     } else {
                         Image(systemName: "moon.zzz")
                             .resizable()
@@ -69,24 +71,23 @@ struct StreakView: View {
                     }
                 }
             }
+
             
         }
         .onAppear {
             let today = calendar.startOfDay(for: Date())
-            
-            // Only animate if the newest session is from today
+
             if let lastSession = sessions.last {
                 let sessionDate = calendar.startOfDay(for: lastSession.startDate)
-                if sessionDate == today {
+                if sessionDate == today || debugStreakAnimation {
                     animateToday = true
-                    
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                         animateToday = false
                     }
                 }
             }
         }
-        
         
     }
     
