@@ -98,13 +98,18 @@ struct MenuBarContentView: View {
     // MARK: - Break Functions
 
     private func suggestBreak() {
+        #if DEBUG
+        let suggestedBreak = 0.25 // 15 seconds in debug mode (0.25 min)
+        #else
         let minutes = elapsedSeconds / 60
         let suggestedBreak = minutes >= 120 ? 30 : min(max(Int(Double(minutes) * 0.2), 5), 20)
+        #endif
 
-        breakTotalDuration = suggestedBreak * 60
+        breakTotalDuration = Int(suggestedBreak * 60)
         breakSecondsRemaining = breakTotalDuration
         startBreak()
     }
+
 
     private func startBreak() {
         isFlowing = false
@@ -115,6 +120,8 @@ struct MenuBarContentView: View {
                 endBreak()
             }
         }
+        print("Break started for \(breakTotalDuration) seconds")
+
     }
 
     private func endBreak() {
