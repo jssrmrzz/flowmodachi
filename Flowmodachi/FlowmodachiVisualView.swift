@@ -1,10 +1,17 @@
 import SwiftUI
 
+enum CreatureMood {
+    case happy
+    case neutral
+    case sleepy
+}
+
 struct FlowmodachiVisualView: View {
     let elapsedSeconds: Int
     let isSleeping: Bool
     let breakSecondsRemaining: Int
     let breakTotalSeconds: Int
+    let mood: CreatureMood
 
     // Evolving stages
     private let stages: [(symbol: String, label: String)] = [
@@ -36,7 +43,7 @@ struct FlowmodachiVisualView: View {
                 }
 
                 // Inner icon (creature or sleep icon)
-                Image(systemName: isSleeping ? "moon.stars" : stages[currentStageIndex].symbol)
+                Image(systemName: symbolForMood())
                     .resizable()
                     .scaledToFit()
                     .frame(width: 36, height: 36)
@@ -102,6 +109,19 @@ struct FlowmodachiVisualView: View {
             withAnimation {
                 currentStageIndex = index
             }
+        }
+    }
+    
+    private func symbolForMood() -> String {
+        if isSleeping { return "moon.stars" }
+
+        switch mood {
+        case .happy:
+            return "sun.max.fill"
+        case .neutral:
+            return stages[currentStageIndex].symbol
+        case .sleepy:
+            return "cloud.moon" // or "zzz" or "cloud.drizzle"
         }
     }
 }
