@@ -10,12 +10,24 @@ struct MenuBarContentView: View {
     @State private var breakSecondsRemaining = 0
     @State private var breakTotalDuration = 0
     @State private var breakTimer: Timer?
+    @StateObject private var sessionManager = SessionManager()
+
 
     var body: some View {
         VStack(spacing: 16) {
             Text("Flowmodachi")
                 .font(.title2)
                 .fontWeight(.semibold)
+        
+            VStack(spacing: 4) {
+                Text("🕒 Today: \(sessionManager.totalMinutesToday()) min")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                Text("🔥 Streak: \(sessionManager.longestStreak()) day\(sessionManager.longestStreak() == 1 ? "" : "s")")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+
 
             // 🌕 Unified Visual: Evolving creature OR sleeping moon
             FlowmodachiVisualView(
@@ -131,6 +143,8 @@ struct MenuBarContentView: View {
         breakSecondsRemaining = 0
         elapsedSeconds = 0
         playBreakEndSound()
+        sessionManager.addSession(duration: elapsedSeconds)
+
     }
 
     // MARK: - Sound
