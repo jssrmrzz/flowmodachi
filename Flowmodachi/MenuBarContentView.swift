@@ -12,6 +12,7 @@ struct MenuBarContentView: View {
     @State private var breakTimer: Timer?
     @StateObject private var sessionManager = SessionManager()
     @AppStorage("showStreaks") private var showStreaks: Bool = true
+    
 
 
 
