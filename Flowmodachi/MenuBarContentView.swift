@@ -11,6 +11,8 @@ struct MenuBarContentView: View {
     @State private var breakTotalDuration = 0
     @State private var breakTimer: Timer?
     @StateObject private var sessionManager = SessionManager()
+    @AppStorage("showStreaks") private var showStreaks: Bool = true
+
 
 
     var body: some View {
@@ -18,6 +20,11 @@ struct MenuBarContentView: View {
             Text("Flowmodachi")
                 .font(.title2)
                 .fontWeight(.semibold)
+            
+            // Streak Display
+            if showStreaks {
+                StreakView(sessions: sessionManager.sessions)
+            }
         
             VStack(spacing: 4) {
                 Text("🕒 Today: \(sessionManager.totalMinutesToday()) min")
