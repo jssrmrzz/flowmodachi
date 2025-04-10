@@ -23,6 +23,27 @@ class SessionManager: ObservableObject {
         let totalSeconds = todaySessions.map { $0.duration }.reduce(0, +)
         return totalSeconds / 60
     }
+    
+    func currentStreak() -> Int {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        // Set of unique session days
+        let sessionDays = Set(sessions.map { calendar.startOfDay(for: $0.startDate) })
+
+        guard !sessionDays.isEmpty else { return 0 }
+
+        var streak = 0
+        var dateCursor = today
+
+        while sessionDays.contains(dateCursor) {
+            streak += 1
+            guard let previousDay = calendar.date(byAdding: .day, value: -1, to: dateCursor) else { break }
+            dateCursor = previousDay
+        }
+
+        return streak
+    }
 
     func longestStreak() -> Int {
         let sortedDates = Set(sessions.map { Calendar.current.startOfDay(for: $0.startDate) }).sorted(by: >)

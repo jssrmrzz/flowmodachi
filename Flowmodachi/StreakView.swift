@@ -58,8 +58,13 @@ struct StreakView: View {
                             .foregroundColor(.yellow)
                             .scaleEffect(isToday(day) && animateToday ? 1.25 : 1.0)
                             .opacity(isToday(day) && animateToday ? 0 : 1)
-                            .transition(.scale)
-                            .animation(.interpolatingSpring(stiffness: 100, damping: 10).delay(0.1), value: animateToday)
+                            .transition(.scale.combined(with: .opacity)) // smooth pop in
+                            .animation(
+                                .easeInOut(duration: 0.6).delay(0.2),
+                                value: animateToday
+                            )
+
+
 
 
                     } else {
