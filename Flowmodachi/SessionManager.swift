@@ -76,4 +76,15 @@ class SessionManager: ObservableObject {
             sessions = saved
         }
     }
+    
+    func missedYesterday() -> Bool {
+        let calendar = Calendar.current
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: Date())!
+        let yesterdayStart = calendar.startOfDay(for: yesterday)
+
+        return !sessions.contains { session in
+            calendar.isDate(session.startDate, inSameDayAs: yesterdayStart)
+        }
+    }
+
 }

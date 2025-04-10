@@ -15,6 +15,17 @@ struct MenuBarContentView: View {
     @AppStorage("showStreaks") private var showStreaks: Bool = true
     
     @State private var showStats = false
+
+    //MOOD "happy" "sleepy" "none" options for testing
+#if DEBUG
+@AppStorage("debugMoodOverride") private var debugMoodOverride: String = "none"
+#endif
+   
+    // Missed Yesterday noti
+#if DEBUG
+@AppStorage("debugMissedYesterday") private var debugMissedYesterday: Bool = false
+#endif
+
     
 
     var body: some View {
@@ -37,7 +48,38 @@ struct MenuBarContentView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
             }
+            
+#if DEBUG
+Picker("Debug Mood", selection: $debugMoodOverride) {
+    Text("None").tag("none")
+    Text("Sleepy").tag("sleepy")
+    Text("Neutral").tag("neutral")
+    Text("Happy").tag("happy")
+}
+.pickerStyle(.segmented)
+.font(.caption)
+.padding(.bottom, 8)
+.transition(.opacity)
+#endif
+            
+#if DEBUG
+Toggle("Debug: Missed Yesterday", isOn: $debugMissedYesterday)
+    .font(.caption)
+    .padding(.bottom, 4)
+#endif
 
+
+            
+            if didMissYesterday {
+                Text("Flowmodachi missed you yesterday 💤")
+                    .font(.caption)
+                    .foregroundColor(.orange)
+                    .padding(8)
+                    .background(Color.orange.opacity(0.1))
+                    .cornerRadius(8)
+                    .transition(.opacity)
+            }
+            
             // Session stats view (optional)
             if showStats {
                 SessionStatsView(
@@ -69,7 +111,8 @@ struct MenuBarContentView: View {
                 elapsedSeconds: elapsedSeconds,
                 isSleeping: isOnBreak,
                 breakSecondsRemaining: breakSecondsRemaining,
-                breakTotalSeconds: breakTotalDuration
+                breakTotalSeconds: breakTotalDuration,
+                mood: flowmodachiMood
             )
 
             if isOnBreak {
@@ -203,6 +246,38 @@ struct MenuBarContentView: View {
 
     var longestStreak: Int {
         sessionManager.longestStreak()
+    }
+    
+    /// Debug-aware check for whether the user missed a session yesterday
+    private var didMissYesterday: Bool {
+        #if DEBUG
+        if debugMissedYesterday {
+            return true
+        }
+        #endif
+        return sessionManager.missedYesterday()
+    }
+
+    
+    var flowmodachiMood: CreatureMood {
+        #if DEBUG
+        switch debugMoodOverride {
+        case "sleepy": return .sleepy
+        case "happy": return .happy
+        case "neutral": return .neutral
+        default: break
+        }
+        #endif
+        
+        
+        // Fall back to real logic if no override is set
+        if didMissYesterday {
+            return .sleepy
+        } else if currentStreak >= 7 {
+            return .happy
+        } else {
+            return .neutral
+        }
     }
 
 }
