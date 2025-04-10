@@ -36,7 +36,7 @@ struct MenuBarContentView: View {
             }
 
 
-            // 🌕 Unified Visual: Evolving creature OR sleeping moon
+            // Unified Visual: Evolving creature OR sleeping moon
             FlowmodachiVisualView(
                 elapsedSeconds: elapsedSeconds,
                 isSleeping: isOnBreak,
