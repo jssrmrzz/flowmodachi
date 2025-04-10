@@ -10,23 +10,51 @@ struct MenuBarContentView: View {
     @State private var breakSecondsRemaining = 0
     @State private var breakTotalDuration = 0
     @State private var breakTimer: Timer?
+    
     @StateObject private var sessionManager = SessionManager()
     @AppStorage("showStreaks") private var showStreaks: Bool = true
     
-
-
+    @State private var showStats = false
+    
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("Flowmodachi")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            // Streak Display
+            // App title + info button aligned in one row
+            HStack {
+                Text("Flowmodachi")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+
+                Spacer()
+
+                Button(action: {
+                    withAnimation {
+                        showStats.toggle()
+                    }
+                }) {
+                    Image(systemName: "info.circle")
+                        .foregroundColor(.gray)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+
+            // Session stats view (optional)
+            if showStats {
+                SessionStatsView(
+                    currentStreak: currentStreak,
+                    totalSessions: totalSessions,
+                    longestStreak: longestStreak
+                )
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .padding(.bottom, 8)
+            }
+
+            // Streak View toggleable by settings
             if showStreaks {
                 StreakView(sessions: sessionManager.sessions)
             }
-        
+
+            // Quick overview (Today + Longest streak)
             VStack(spacing: 4) {
                 Text("🕒 Today: \(sessionManager.totalMinutesToday()) min")
                     .font(.caption)
@@ -36,8 +64,7 @@ struct MenuBarContentView: View {
                     .foregroundColor(.gray)
             }
 
-
-            // Unified Visual: Evolving creature OR sleeping moon
+            // Creature / moon visual
             FlowmodachiVisualView(
                 elapsedSeconds: elapsedSeconds,
                 isSleeping: isOnBreak,
@@ -46,13 +73,12 @@ struct MenuBarContentView: View {
             )
 
             if isOnBreak {
-                // 💤 Sleep mode – break in progress
                 Button("End Break Early") {
                     endBreak()
                 }
                 .buttonStyle(.borderedProminent)
             } else {
-                // 🧠 Flow timer controls
+                // Flow timer & controls
                 Text(formattedTime)
                     .font(.system(.largeTitle, design: .monospaced))
                     .padding(.bottom, 4)
@@ -88,6 +114,11 @@ struct MenuBarContentView: View {
         .padding()
         .frame(width: 280)
     }
+
+
+
+
+    
 
     private var formattedTime: String {
         let minutes = elapsedSeconds / 60
@@ -160,5 +191,19 @@ struct MenuBarContentView: View {
     private func playBreakEndSound() {
         NSSound(named: "Glass")?.play()
     }
+    
+    var totalSessions: Int {
+        sessionManager.sessions.count
+    }
+    
+    var currentStreak: Int {
+        sessionManager.currentStreak()
+    }
+
+
+    var longestStreak: Int {
+        sessionManager.longestStreak()
+    }
+
 }
 
