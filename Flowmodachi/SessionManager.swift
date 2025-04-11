@@ -24,11 +24,26 @@ class SessionManager: ObservableObject {
         return totalSeconds / 60
     }
     
-    func currentStreak() -> Int {
+    func calculateMood(debugMissedYesterday: Bool) -> CreatureMood {
+        #if DEBUG
+        if debugMissedYesterday {
+            return .sleepy
+        }
+        #endif
+
+        if missedYesterday() {
+            return .sleepy
+        } else if currentStreak >= 7 {
+            return .happy
+        } else {
+            return .neutral
+        }
+    }
+
+    /// Computed property for the user's current streak (consecutive days including today)
+    var currentStreak: Int {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-
-        // Set of unique session days
         let sessionDays = Set(sessions.map { calendar.startOfDay(for: $0.startDate) })
 
         guard !sessionDays.isEmpty else { return 0 }
@@ -45,23 +60,42 @@ class SessionManager: ObservableObject {
         return streak
     }
 
-    func longestStreak() -> Int {
-        let sortedDates = Set(sessions.map { Calendar.current.startOfDay(for: $0.startDate) }).sorted(by: >)
+    /// Computed property for the user's longest streak of consecutive days
+    var longestStreak: Int {
+        let sortedDates = Set(sessions.map { Calendar.current.startOfDay(for: $0.startDate) }).sorted(by: <)
 
         guard !sortedDates.isEmpty else { return 0 }
 
-        var streak = 1
-        var current = sortedDates[0]
+        var maxStreak = 1
+        var currentStreak = 1
+        var lastDate = sortedDates[0]
 
         for date in sortedDates.dropFirst() {
-            if Calendar.current.date(byAdding: .day, value: -1, to: current) == date {
-                streak += 1
-                current = date
+            if Calendar.current.date(byAdding: .day, value: 1, to: lastDate) == date {
+                currentStreak += 1
             } else {
-                break
+                maxStreak = max(maxStreak, currentStreak)
+                currentStreak = 1
             }
+            lastDate = date
         }
-        return streak
+
+        return max(maxStreak, currentStreak)
+    }
+
+    func missedYesterday() -> Bool {
+        let calendar = Calendar.current
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: Date())!
+        let yesterdayStart = calendar.startOfDay(for: yesterday)
+
+        return !sessions.contains { session in
+            calendar.isDate(session.startDate, inSameDayAs: yesterdayStart)
+        }
+    }
+
+    func clearAllSessions() {
+        sessions = []
+        UserDefaults.standard.removeObject(forKey: storageKey)
     }
 
     private func saveSessions() {
@@ -76,15 +110,5 @@ class SessionManager: ObservableObject {
             sessions = saved
         }
     }
-    
-    func missedYesterday() -> Bool {
-        let calendar = Calendar.current
-        let yesterday = calendar.date(byAdding: .day, value: -1, to: Date())!
-        let yesterdayStart = calendar.startOfDay(for: yesterday)
-
-        return !sessions.contains { session in
-            calendar.isDate(session.startDate, inSameDayAs: yesterdayStart)
-        }
-    }
-
 }
+
