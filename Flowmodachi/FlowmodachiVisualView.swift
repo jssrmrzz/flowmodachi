@@ -1,19 +1,22 @@
 import SwiftUI
 
+// MARK: - Mood Enum
 enum CreatureMood {
     case happy
     case neutral
     case sleepy
 }
 
+// MARK: - Main Visual View
 struct FlowmodachiVisualView: View {
+    // External state passed into the view
     let elapsedSeconds: Int
     let isSleeping: Bool
     let breakSecondsRemaining: Int
     let breakTotalSeconds: Int
     let mood: CreatureMood
 
-    // Evolving stages
+    // MARK: - Evolution Stages
     private let stages: [(symbol: String, label: String)] = [
         ("sun.min", "Stage 1"),
         ("sun.min.fill", "Stage 2"),
@@ -21,20 +24,47 @@ struct FlowmodachiVisualView: View {
         ("sun.max.fill", "Final Form")
     ]
 
+    // MARK: - State
     @State private var currentStageIndex: Int = 0
     @State private var isPulsing = false
 
+    // MARK: - Computed Properties
+
+    /// Icon that represents current state based on mood or sleep
+    private var currentSymbolName: String {
+        if isSleeping {
+            return "moon.stars"
+        }
+
+        switch mood {
+        case .happy: return "sun.max.fill"
+        case .neutral: return stages[currentStageIndex].symbol
+        case .sleepy: return "cloud.moon"
+        }
+    }
+
+    /// Label that appears below the creature
+    private var moodLabel: String {
+        switch mood {
+        case .happy: return "Feeling great!"
+        case .neutral: return stages[currentStageIndex].label
+        case .sleepy: return "A bit sleepy 💤"
+        }
+    }
+
+    // MARK: - Body
     var body: some View {
         VStack(spacing: 8) {
             ZStack {
+                // Background Ring or Aura
                 if isSleeping {
-                    // Pulsing aura during break
+                    // Sleep aura with pulsing animation
                     Circle()
                         .stroke(Color.blue.opacity(0.3), lineWidth: 8)
                         .scaleEffect(isPulsing ? 1.1 : 0.9)
                         .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: isPulsing)
                 } else {
-                    // Flow progress ring
+                    // Progress ring showing evolution during flow
                     Circle()
                         .trim(from: 0, to: flowProgress)
                         .stroke(Color.purple, style: StrokeStyle(lineWidth: 5, lineCap: .round))
@@ -42,16 +72,16 @@ struct FlowmodachiVisualView: View {
                         .animation(.easeInOut(duration: 0.4), value: flowProgress)
                 }
 
-                // Inner icon (creature or sleep icon)
-                Image(systemName: symbolForMood())
+                // Creature or mood icon
+                Image(systemName: currentSymbolName)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 36, height: 36)
                     .foregroundColor(.purple)
                     .transition(.scale.combined(with: .opacity))
-                    .id(isSleeping ? "sleep" : stages[currentStageIndex].symbol)
+                    .id(currentSymbolName)
 
-                // If on break, show countdown inside ring
+                // Break timer countdown below icon
                 if isSleeping {
                     Text(formattedBreakTime)
                         .font(.system(.caption, design: .monospaced))
@@ -61,9 +91,9 @@ struct FlowmodachiVisualView: View {
             }
             .frame(width: 70, height: 70)
 
-            // Stage label (only during flow)
+            // Label shown only during flow sessions
             if !isSleeping {
-                Text(stages[currentStageIndex].label)
+                Text(moodLabel)
                     .font(.caption)
                     .foregroundColor(.gray)
                     .animation(.easeInOut(duration: 0.4), value: currentStageIndex)
@@ -83,19 +113,22 @@ struct FlowmodachiVisualView: View {
         }
     }
 
-    // MARK: - Logic
+    // MARK: - Logic Helpers
 
+    /// Returns the formatted countdown string for break time
     private var formattedBreakTime: String {
         let minutes = breakSecondsRemaining / 60
         let seconds = breakSecondsRemaining % 60
         return String(format: "%02d:%02d", minutes, seconds)
     }
 
+    /// Controls how filled the ring is based on focus duration
     private var flowProgress: Double {
         let totalTime: Double = 9.0 // Change to 60 * 60 for full evolution
         return min(Double(elapsedSeconds) / totalTime, 1.0)
     }
 
+    /// Updates which stage of evolution we're currently in
     private func updateStage() {
         let index: Int
         switch elapsedSeconds {
@@ -109,19 +142,6 @@ struct FlowmodachiVisualView: View {
             withAnimation {
                 currentStageIndex = index
             }
-        }
-    }
-    
-    private func symbolForMood() -> String {
-        if isSleeping { return "moon.stars" }
-
-        switch mood {
-        case .happy:
-            return "sun.max.fill"
-        case .neutral:
-            return stages[currentStageIndex].symbol
-        case .sleepy:
-            return "cloud.moon" // or "zzz" or "cloud.drizzle"
         }
     }
 }
