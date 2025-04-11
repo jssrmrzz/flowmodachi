@@ -11,18 +11,16 @@ struct MenuBarContentView: View {
     @State private var breakTotalDuration = 0
     @State private var breakTimer: Timer?
 
+    @State private var sessionCountedToday = false
     @StateObject private var sessionManager = SessionManager()
     @AppStorage("showStreaks") private var showStreaks: Bool = true
 
     @State private var showStats = false
-    
     @AppStorage("debugMoodOverride") private var debugMoodOverride: String = "none"
     @AppStorage("debugMissedYesterday") private var debugMissedYesterday: Bool = false
 
-
     var body: some View {
         VStack(spacing: 16) {
-            // App title + info button aligned in one row
             HStack {
                 Text("Flowmodachi")
                     .font(.title2)
@@ -51,36 +49,33 @@ struct MenuBarContentView: View {
                     .transition(.opacity)
             }
 
-            // Session stats view (optional)
             if showStats {
                 SessionStatsView(
-                    currentStreak: currentStreak,
-                    totalSessions: totalSessions,
-                    longestStreak: longestStreak
+                    currentStreak: sessionManager.currentStreak,
+                    totalSessions: sessionManager.sessions.count,
+                    longestStreak: sessionManager.longestStreak
                 )
                 .transition(.opacity.combined(with: .move(edge: .top)))
                 .padding(.bottom, 8)
             }
 
             DebugToolsView()
+                .environmentObject(sessionManager)
                 .padding(.top, 4)
 
-            // Streak View toggleable by settings
             if showStreaks {
                 StreakView(sessions: sessionManager.sessions)
             }
 
-            // Quick overview (Today + Longest streak)
             VStack(spacing: 4) {
                 Text("🕒 Today: \(sessionManager.totalMinutesToday()) min")
                     .font(.caption)
                     .foregroundColor(.gray)
-                Text("🔥 Streak: \(sessionManager.longestStreak()) day\(sessionManager.longestStreak() == 1 ? "" : "s")")
+                Text("🔥 Streak: \(sessionManager.longestStreak) day\(sessionManager.longestStreak == 1 ? "" : "s")")
                     .font(.caption)
                     .foregroundColor(.gray)
             }
 
-            // Creature / moon visual
             FlowmodachiVisualView(
                 elapsedSeconds: elapsedSeconds,
                 isSleeping: isOnBreak,
@@ -95,7 +90,6 @@ struct MenuBarContentView: View {
                 }
                 .buttonStyle(.borderedProminent)
             } else {
-                // Flow timer & controls
                 Text(formattedTime)
                     .font(.system(.largeTitle, design: .monospaced))
                     .padding(.bottom, 4)
@@ -129,6 +123,11 @@ struct MenuBarContentView: View {
             }
         }
         .padding()
+        .onChange(of: elapsedSeconds) {
+            if elapsedSeconds >= minimumEligibleSeconds && !sessionCountedToday {
+                recordSessionIfEligible()
+            }
+        }
         .frame(width: 280)
     }
 
@@ -138,10 +137,9 @@ struct MenuBarContentView: View {
         return String(format: "%02d:%02d", minutes, seconds)
     }
 
-    // MARK: - Flow Timer Functions
-
     private func startTimer() {
         isFlowing = true
+        sessionCountedToday = false
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             elapsedSeconds += 1
         }
@@ -157,13 +155,12 @@ struct MenuBarContentView: View {
         recordSessionIfEligible()
         pauseTimer()
         elapsedSeconds = 0
+        sessionCountedToday = false
     }
-
-    // MARK: - Break Functions
 
     private func suggestBreak() {
         #if DEBUG
-        let suggestedBreak = 0.25 // 15 seconds in debug mode (0.25 min)
+        let suggestedBreak = 0.25
         #else
         let minutes = elapsedSeconds / 60
         let suggestedBreak = minutes >= 120 ? 30 : min(max(Int(Double(minutes) * 0.2), 5), 20)
@@ -195,52 +192,35 @@ struct MenuBarContentView: View {
         playBreakEndSound()
         recordSessionIfEligible()
     }
-    
-    // MARK: Record Session Function
-    private func recordSessionIfEligible() {
-        let minimumDuration: Int = {
-            #if DEBUG
-            return 5
-            #else
-            return 60 * 5
-            #endif
-        }()
 
-        // Don't double-record a session for the same day
+    private func recordSessionIfEligible() {
         let today = Calendar.current.startOfDay(for: Date())
         let alreadyRecorded = sessionManager.sessions.contains {
             Calendar.current.isDate($0.startDate, inSameDayAs: today)
         }
 
-        if elapsedSeconds >= minimumDuration && !alreadyRecorded {
+        if elapsedSeconds >= minimumEligibleSeconds && !alreadyRecorded {
             sessionManager.addSession(duration: elapsedSeconds)
-            print("✅ Session recorded for today")
+            sessionCountedToday = true
+            print("✅ Session recorded at \(elapsedSeconds) seconds")
         }
     }
 
-
-    // MARK: - Sound
+    private var minimumEligibleSeconds: Int {
+        #if DEBUG
+        return 5
+        #else
+        return 60 * 5
+        #endif
+    }
 
     private func playBreakEndSound() {
         NSSound(named: "Glass")?.play()
     }
 
-    var totalSessions: Int {
-        sessionManager.sessions.count
-    }
-
-    var currentStreak: Int {
-        sessionManager.currentStreak()
-    }
-
-    var longestStreak: Int {
-        sessionManager.longestStreak()
-    }
-
-    /// Debug-aware check for whether the user missed a session yesterday
     private var didMissYesterday: Bool {
         #if DEBUG
-        if UserDefaults.standard.bool(forKey: "debugMissedYesterday") {
+        if debugMissedYesterday {
             return true
         }
         #endif
@@ -249,22 +229,14 @@ struct MenuBarContentView: View {
 
     var flowmodachiMood: CreatureMood {
         #if DEBUG
-        let override = UserDefaults.standard.string(forKey: "debugMoodOverride") ?? "none"
-        switch override {
+        switch debugMoodOverride {
         case "sleepy": return .sleepy
         case "happy": return .happy
         case "neutral": return .neutral
         default: break
         }
         #endif
-
-        if didMissYesterday {
-            return .sleepy
-        } else if currentStreak >= 7 {
-            return .happy
-        } else {
-            return .neutral
-        }
+        return sessionManager.calculateMood(debugMissedYesterday: didMissYesterday)
     }
 }
 
