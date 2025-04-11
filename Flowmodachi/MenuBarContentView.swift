@@ -10,23 +10,15 @@ struct MenuBarContentView: View {
     @State private var breakSecondsRemaining = 0
     @State private var breakTotalDuration = 0
     @State private var breakTimer: Timer?
-    
+
     @StateObject private var sessionManager = SessionManager()
     @AppStorage("showStreaks") private var showStreaks: Bool = true
-    
+
     @State private var showStats = false
-
-    //MOOD "happy" "sleepy" "none" options for testing
-#if DEBUG
-@AppStorage("debugMoodOverride") private var debugMoodOverride: String = "none"
-#endif
-   
-    // Missed Yesterday noti
-#if DEBUG
-@AppStorage("debugMissedYesterday") private var debugMissedYesterday: Bool = false
-#endif
-
     
+    @AppStorage("debugMoodOverride") private var debugMoodOverride: String = "none"
+    @AppStorage("debugMissedYesterday") private var debugMissedYesterday: Bool = false
+
 
     var body: some View {
         VStack(spacing: 16) {
@@ -48,28 +40,7 @@ struct MenuBarContentView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
             }
-            
-#if DEBUG
-Picker("Debug Mood", selection: $debugMoodOverride) {
-    Text("None").tag("none")
-    Text("Sleepy").tag("sleepy")
-    Text("Neutral").tag("neutral")
-    Text("Happy").tag("happy")
-}
-.pickerStyle(.segmented)
-.font(.caption)
-.padding(.bottom, 8)
-.transition(.opacity)
-#endif
-            
-#if DEBUG
-Toggle("Debug: Missed Yesterday", isOn: $debugMissedYesterday)
-    .font(.caption)
-    .padding(.bottom, 4)
-#endif
 
-
-            
             if didMissYesterday {
                 Text("Flowmodachi missed you yesterday 💤")
                     .font(.caption)
@@ -79,7 +50,7 @@ Toggle("Debug: Missed Yesterday", isOn: $debugMissedYesterday)
                     .cornerRadius(8)
                     .transition(.opacity)
             }
-            
+
             // Session stats view (optional)
             if showStats {
                 SessionStatsView(
@@ -90,6 +61,9 @@ Toggle("Debug: Missed Yesterday", isOn: $debugMissedYesterday)
                 .transition(.opacity.combined(with: .move(edge: .top)))
                 .padding(.bottom, 8)
             }
+
+            DebugToolsView()
+                .padding(.top, 4)
 
             // Streak View toggleable by settings
             if showStreaks {
@@ -158,11 +132,6 @@ Toggle("Debug: Missed Yesterday", isOn: $debugMissedYesterday)
         .frame(width: 280)
     }
 
-
-
-
-    
-
     private var formattedTime: String {
         let minutes = elapsedSeconds / 60
         let seconds = elapsedSeconds % 60
@@ -185,6 +154,7 @@ Toggle("Debug: Missed Yesterday", isOn: $debugMissedYesterday)
     }
 
     private func resetTimer() {
+        recordSessionIfEligible()
         pauseTimer()
         elapsedSeconds = 0
     }
@@ -204,7 +174,6 @@ Toggle("Debug: Missed Yesterday", isOn: $debugMissedYesterday)
         startBreak()
     }
 
-
     private func startBreak() {
         isFlowing = false
         isOnBreak = true
@@ -215,7 +184,6 @@ Toggle("Debug: Missed Yesterday", isOn: $debugMissedYesterday)
             }
         }
         print("Break started for \(breakTotalDuration) seconds")
-
     }
 
     private func endBreak() {
@@ -225,52 +193,71 @@ Toggle("Debug: Missed Yesterday", isOn: $debugMissedYesterday)
         breakSecondsRemaining = 0
         elapsedSeconds = 0
         playBreakEndSound()
-        sessionManager.addSession(duration: elapsedSeconds)
-
+        recordSessionIfEligible()
     }
+    
+    // MARK: Record Session Function
+    private func recordSessionIfEligible() {
+        let minimumDuration: Int = {
+            #if DEBUG
+            return 5
+            #else
+            return 60 * 5
+            #endif
+        }()
+
+        // Don't double-record a session for the same day
+        let today = Calendar.current.startOfDay(for: Date())
+        let alreadyRecorded = sessionManager.sessions.contains {
+            Calendar.current.isDate($0.startDate, inSameDayAs: today)
+        }
+
+        if elapsedSeconds >= minimumDuration && !alreadyRecorded {
+            sessionManager.addSession(duration: elapsedSeconds)
+            print("✅ Session recorded for today")
+        }
+    }
+
 
     // MARK: - Sound
 
     private func playBreakEndSound() {
         NSSound(named: "Glass")?.play()
     }
-    
+
     var totalSessions: Int {
         sessionManager.sessions.count
     }
-    
+
     var currentStreak: Int {
         sessionManager.currentStreak()
     }
 
-
     var longestStreak: Int {
         sessionManager.longestStreak()
     }
-    
+
     /// Debug-aware check for whether the user missed a session yesterday
     private var didMissYesterday: Bool {
         #if DEBUG
-        if debugMissedYesterday {
+        if UserDefaults.standard.bool(forKey: "debugMissedYesterday") {
             return true
         }
         #endif
         return sessionManager.missedYesterday()
     }
 
-    
     var flowmodachiMood: CreatureMood {
         #if DEBUG
-        switch debugMoodOverride {
+        let override = UserDefaults.standard.string(forKey: "debugMoodOverride") ?? "none"
+        switch override {
         case "sleepy": return .sleepy
         case "happy": return .happy
         case "neutral": return .neutral
         default: break
         }
         #endif
-        
-        
-        // Fall back to real logic if no override is set
+
         if didMissYesterday {
             return .sleepy
         } else if currentStreak >= 7 {
@@ -279,6 +266,5 @@ Toggle("Debug: Missed Yesterday", isOn: $debugMissedYesterday)
             return .neutral
         }
     }
-
 }
 
