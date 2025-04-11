@@ -1,26 +1,34 @@
+// MARK: - Imports
 import SwiftUI
 import AVFoundation
 
+// MARK: - Main View
 struct MenuBarContentView: View {
+    // MARK: - Timer State
     @State private var isFlowing = false
     @State private var elapsedSeconds = 0
     @State private var timer: Timer?
 
+    // MARK: - Break Timer State
     @State private var isOnBreak = false
     @State private var breakSecondsRemaining = 0
     @State private var breakTotalDuration = 0
     @State private var breakTimer: Timer?
 
+    // MARK: - Session Tracking
     @State private var sessionCountedToday = false
     @StateObject private var sessionManager = SessionManager()
     @AppStorage("showStreaks") private var showStreaks: Bool = true
 
+    // MARK: - UI Toggles
     @State private var showStats = false
     @AppStorage("debugMoodOverride") private var debugMoodOverride: String = "none"
     @AppStorage("debugMissedYesterday") private var debugMissedYesterday: Bool = false
 
+    // MARK: - View Body
     var body: some View {
         VStack(spacing: 16) {
+            // MARK: - Title + Stats Toggle Button
             HStack {
                 Text("Flowmodachi")
                     .font(.title2)
@@ -39,6 +47,7 @@ struct MenuBarContentView: View {
                 .buttonStyle(PlainButtonStyle())
             }
 
+            // MARK: - Missed Yesterday Notification
             if didMissYesterday {
                 Text("Flowmodachi missed you yesterday 💤")
                     .font(.caption)
@@ -49,6 +58,7 @@ struct MenuBarContentView: View {
                     .transition(.opacity)
             }
 
+            // MARK: - Stats View
             if showStats {
                 SessionStatsView(
                     currentStreak: sessionManager.currentStreak,
@@ -59,14 +69,17 @@ struct MenuBarContentView: View {
                 .padding(.bottom, 8)
             }
 
+            // MARK: - Debug Tools
             DebugToolsView()
                 .environmentObject(sessionManager)
                 .padding(.top, 4)
 
+            // MARK: - Streak View
             if showStreaks {
                 StreakView(sessions: sessionManager.sessions)
             }
 
+            // MARK: - Summary Info
             VStack(spacing: 4) {
                 Text("🕒 Today: \(sessionManager.totalMinutesToday()) min")
                     .font(.caption)
@@ -76,6 +89,7 @@ struct MenuBarContentView: View {
                     .foregroundColor(.gray)
             }
 
+            // MARK: - Visual View
             FlowmodachiVisualView(
                 elapsedSeconds: elapsedSeconds,
                 isSleeping: isOnBreak,
@@ -84,6 +98,7 @@ struct MenuBarContentView: View {
                 mood: flowmodachiMood
             )
 
+            // MARK: - Break or Flow Timer
             if isOnBreak {
                 Button("End Break Early") {
                     endBreak()
@@ -131,12 +146,14 @@ struct MenuBarContentView: View {
         .frame(width: 280)
     }
 
+    // MARK: - Time Formatting
     private var formattedTime: String {
         let minutes = elapsedSeconds / 60
         let seconds = elapsedSeconds % 60
         return String(format: "%02d:%02d", minutes, seconds)
     }
 
+    // MARK: - Timer Controls
     private func startTimer() {
         isFlowing = true
         sessionCountedToday = false
@@ -158,6 +175,7 @@ struct MenuBarContentView: View {
         sessionCountedToday = false
     }
 
+    // MARK: - Break Controls
     private func suggestBreak() {
         #if DEBUG
         let suggestedBreak = 0.25
@@ -193,6 +211,7 @@ struct MenuBarContentView: View {
         recordSessionIfEligible()
     }
 
+    // MARK: - Session Recording
     private func recordSessionIfEligible() {
         let today = Calendar.current.startOfDay(for: Date())
         let alreadyRecorded = sessionManager.sessions.contains {
@@ -214,10 +233,12 @@ struct MenuBarContentView: View {
         #endif
     }
 
+    // MARK: - Sound
     private func playBreakEndSound() {
         NSSound(named: "Glass")?.play()
     }
 
+    // MARK: - Mood & Notifications
     private var didMissYesterday: Bool {
         #if DEBUG
         if debugMissedYesterday {
