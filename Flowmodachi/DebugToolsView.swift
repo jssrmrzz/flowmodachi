@@ -13,7 +13,7 @@ struct DebugToolsView: View {
     var body: some View {
         #if DEBUG
         DisclosureGroup("🧪 Dev Tools") {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 14) {
 
                 // MARK: - Mood Override
                 VStack(alignment: .leading, spacing: 4) {
@@ -32,7 +32,7 @@ struct DebugToolsView: View {
 
                 // MARK: - Evolution Stage Override
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Evolution Stage")
+                    Text("Evolution Stage Override")
                         .font(.caption2)
                         .foregroundColor(.secondary)
 
@@ -46,14 +46,26 @@ struct DebugToolsView: View {
                     .pickerStyle(.segmented)
                 }
 
-                // MARK: - Pet Evolution Trigger
-                Button("Force Evolution") {
-                    petManager.evolveIfEligible()
-                }
-                .font(.caption)
-                .foregroundColor(.blue)
+                // MARK: - Evolution Actions
+                VStack(alignment: .leading, spacing: 6) {
+                    Button("🐣 Force Evolution") {
+                        petManager.evolveIfEligible()
+                        // print("Evolved to: \(petManager.currentCharacter.id)")
+                    }
+                    .font(.caption)
+                    .foregroundColor(.blue)
 
-                // MARK: - Simulated Session Controls
+                    Button("🔄 Reset Pet to Random Egg") {
+                        petManager.resetToStart()
+                        // print("Reset to: \(petManager.currentCharacter.id)")
+                    }
+                    .font(.caption)
+                    .foregroundColor(.blue)
+                }
+
+                Divider().padding(.vertical, 4)
+
+                // MARK: - Session & Demo Controls
                 Toggle("Simulate Missed Yesterday", isOn: $debugMissedYesterday)
 
                 Toggle("Demo Mode (7-day streak)", isOn: Binding(
@@ -68,7 +80,7 @@ struct DebugToolsView: View {
                     }
                 ))
 
-                Button("Reset Sessions") {
+                Button("🧹 Reset Sessions") {
                     sessionManager.clearAllSessions()
                 }
                 .foregroundColor(.red)

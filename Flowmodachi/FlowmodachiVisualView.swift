@@ -31,15 +31,30 @@ struct FlowmodachiVisualView: View {
             ZStack {
                 backgroundRing
 
-                Image(petManager.currentCharacter.imageName)
-                    .resizable()
-                    .interpolation(.none)
-                    .scaledToFit()
-                    .frame(width: 36, height: 36)
-                    .rotationEffect(.degrees(isEggWobbleActive ? 4 : 0))
-                    .animation(.easeInOut(duration: 0.4), value: wobble)
-                    .transition(.scale.combined(with: .opacity))
-                    .id(petManager.currentCharacter.id)
+                if characterImageExists {
+                    Image(petManager.currentCharacter.imageName)
+                        .resizable()
+                        .interpolation(.none)
+                        .scaledToFit()
+                        .frame(width: characterSize, height: characterSize)
+                        .rotationEffect(.degrees(isEggWobbleActive ? 4 : 0))
+                        .animation(.easeInOut(duration: 0.4), value: wobble)
+                        .transition(.scale.combined(with: .opacity))
+                        .id(petManager.currentCharacter.id)
+                } else {
+                    Image(systemName: "questionmark.circle")
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundColor(.gray)
+                        .frame(width: 36, height: 36)
+                        .overlay(
+                            Text("Missing\nArt")
+                                .font(.caption2)
+                                .multilineTextAlignment(.center)
+                                .foregroundColor(.red)
+                                .padding(.top, 30)
+                        )
+                }
 
                 if isSleeping {
                     Text(formattedBreakTime)
@@ -77,11 +92,30 @@ struct FlowmodachiVisualView: View {
         }
     }
 
-    // MARK: - Animation Logic
+    // MARK: - Computed Properties
 
+    /// Determine if image exists for fallback handling
+    private var characterImageExists: Bool {
+        NSImage(named: petManager.currentCharacter.imageName) != nil
+    }
+
+    /// Should the character wobble like an egg?
     private var isEggWobbleActive: Bool {
         petManager.currentCharacter.stage == 0 && wobble
     }
+
+    /// Adjusts size based on evolution stage
+    private var characterSize: CGFloat {
+        switch petManager.currentCharacter.stage {
+        case 0: return 36  // Egg
+        case 1: return 65  // Stage 1
+        case 2: return 52  // Stage 2
+        case 3: return 60  // Final form
+        default: return 36
+        }
+    }
+
+    // MARK: - Animation
 
     private func startStageAnimationLoop() {
         guard petManager.currentCharacter.stage == 0 else { return }
@@ -131,3 +165,4 @@ struct FlowmodachiVisualView: View {
         }
     }
 }
+

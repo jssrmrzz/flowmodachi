@@ -19,29 +19,40 @@ class PetManager: ObservableObject {
     private let characterMap: [String: PetCharacter]
 
     init() {
-        // Initialize full character map
+        // MARK: - Character Map Setup
         var map: [String: PetCharacter] = [:]
 
-        // Add 16 stage-0 eggs
+        // Add 16 Stage 0 Eggs with unique paths to Stage 1
         let eggIds = (0..<16).map { i -> String in
             let id = "egg_\(i)"
             map[id] = PetCharacter(
                 id: id,
                 stage: 0,
                 imageName: id,
-                nextStageIds: ["form_\(i)_1"] // Each egg has its unique stage 1 form
+                nextStageIds: ["form_\(i)_1"]
             )
             return id
         }
 
-        // Add 16 stage-1 forms
+        // Add 16 Stage 1 Forms, each mapping to its unique Stage 2
         for i in 0..<16 {
             let id = "form_\(i)_1"
             map[id] = PetCharacter(
                 id: id,
                 stage: 1,
                 imageName: id,
-                nextStageIds: [] // You can define next evolutions later
+                nextStageIds: ["form_\(i)_2"]
+            )
+        }
+
+        // Add 16 Stage 2 Forms (lineage-aware, but no evolution to Stage 3 yet)
+        for i in 0..<16 {
+            let id = "form_\(i)_2"
+            map[id] = PetCharacter(
+                id: id,
+                stage: 2,
+                imageName: id,
+                nextStageIds: [] // Will later add links to form_\(i)_3a, _3b, etc.
             )
         }
 
@@ -59,14 +70,21 @@ class PetManager: ObservableObject {
         }
     }
 
-    // MARK: - Evolution
+    // MARK: - Evolution Logic
 
     func evolveIfEligible() {
         guard !currentCharacter.nextStageIds.isEmpty else { return }
+
         if let nextId = currentCharacter.nextStageIds.randomElement(),
            let nextCharacter = characterMap[nextId] {
             currentCharacter = nextCharacter
             UserDefaults.standard.set(nextId, forKey: storageKey)
+
+            #if DEBUG
+            if NSImage(named: nextCharacter.imageName) == nil {
+                print("⚠️ Missing image asset for evolved character: \(nextCharacter.imageName)")
+            }
+            #endif
         }
     }
 
@@ -78,6 +96,13 @@ class PetManager: ObservableObject {
            let starter = characterMap[randomEggId] {
             currentCharacter = starter
             UserDefaults.standard.set(starter.id, forKey: storageKey)
+
+            #if DEBUG
+            if NSImage(named: starter.imageName) == nil {
+                print("⚠️ Missing image asset for starter egg: \(starter.imageName)")
+            }
+            #endif
         }
     }
 }
+
