@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DebugToolsView: View {
     @EnvironmentObject var sessionManager: SessionManager
+    @EnvironmentObject var petManager: PetManager  // 🧬 For evolution testing
 
     // MARK: - Debug Flags (persisted)
     @AppStorage("debugMoodOverride") private var debugMoodOverride: String = "none"
@@ -45,10 +46,16 @@ struct DebugToolsView: View {
                     .pickerStyle(.segmented)
                 }
 
-                // MARK: - Missed Yesterday Toggle
+                // MARK: - Pet Evolution Trigger
+                Button("Force Evolution") {
+                    petManager.evolveIfEligible()
+                }
+                .font(.caption)
+                .foregroundColor(.blue)
+
+                // MARK: - Simulated Session Controls
                 Toggle("Simulate Missed Yesterday", isOn: $debugMissedYesterday)
 
-                // MARK: - Demo Mode & Reset
                 Toggle("Demo Mode (7-day streak)", isOn: Binding(
                     get: { debugDemoMode },
                     set: { newValue in
