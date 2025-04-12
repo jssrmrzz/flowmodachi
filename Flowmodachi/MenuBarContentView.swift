@@ -19,6 +19,10 @@ struct MenuBarContentView: View {
     @State private var sessionCountedToday = false
     @StateObject private var sessionManager = SessionManager()
     @AppStorage("showStreaks") private var showStreaks: Bool = true
+    
+    // MARK: - Evolution Tracker
+    @StateObject private var evolutionTracker = EvolutionTracker()
+
 
     // MARK: - UI Toggles
     @State private var showStats = false
@@ -97,6 +101,8 @@ struct MenuBarContentView: View {
                 breakTotalSeconds: breakTotalDuration,
                 mood: flowmodachiMood
             )
+            .environmentObject(evolutionTracker)
+
 
             // MARK: - Break or Flow Timer
             if isOnBreak {
@@ -204,12 +210,17 @@ struct MenuBarContentView: View {
     private func endBreak() {
         breakTimer?.invalidate()
         breakTimer = nil
+
+        let breakTaken = breakTotalDuration - breakSecondsRemaining
+        evolutionTracker.addBreakCredit(breakTaken)
+
         isOnBreak = false
         breakSecondsRemaining = 0
         elapsedSeconds = 0
         playBreakEndSound()
         recordSessionIfEligible()
     }
+    
 
     // MARK: - Session Recording
     private func recordSessionIfEligible() {

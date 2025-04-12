@@ -2,25 +2,54 @@ import SwiftUI
 
 struct DebugToolsView: View {
     @EnvironmentObject var sessionManager: SessionManager
+
+    // MARK: - Debug Flags (persisted)
     @AppStorage("debugMoodOverride") private var debugMoodOverride: String = "none"
     @AppStorage("debugMissedYesterday") private var debugMissedYesterday: Bool = false
     @AppStorage("debugDemoMode") private var debugDemoMode: Bool = false
+    @AppStorage("debugEvolutionStage") private var debugEvolutionStage: Int = -1 // -1 = auto
 
     var body: some View {
         #if DEBUG
         DisclosureGroup("🧪 Dev Tools") {
-            VStack(alignment: .leading, spacing: 10) {
-                Picker("Mood", selection: $debugMoodOverride) {
-                    Text("None").tag("none")
-                    Text("Sleepy").tag("sleepy")
-                    Text("Neutral").tag("neutral")
-                    Text("Happy").tag("happy")
+            VStack(alignment: .leading, spacing: 12) {
+
+                // MARK: - Mood Override
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Mood Override")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+
+                    Picker("Mood", selection: $debugMoodOverride) {
+                        Text("None").tag("none")
+                        Text("Sleepy").tag("sleepy")
+                        Text("Neutral").tag("neutral")
+                        Text("Happy").tag("happy")
+                    }
+                    .pickerStyle(.segmented)
                 }
-                .pickerStyle(.segmented)
 
-                Toggle("Missed Yesterday", isOn: $debugMissedYesterday)
+                // MARK: - Evolution Stage Override
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Evolution Stage")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
 
-                Toggle("Demo Mode", isOn: Binding(
+                    Picker("Stage", selection: $debugEvolutionStage) {
+                        Text("Auto").tag(-1)
+                        Text("Stage 1").tag(0)
+                        Text("Stage 2").tag(1)
+                        Text("Stage 3").tag(2)
+                        Text("Final").tag(3)
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                // MARK: - Missed Yesterday Toggle
+                Toggle("Simulate Missed Yesterday", isOn: $debugMissedYesterday)
+
+                // MARK: - Demo Mode & Reset
+                Toggle("Demo Mode (7-day streak)", isOn: Binding(
                     get: { debugDemoMode },
                     set: { newValue in
                         debugDemoMode = newValue
@@ -36,6 +65,7 @@ struct DebugToolsView: View {
                     sessionManager.clearAllSessions()
                 }
                 .foregroundColor(.red)
+                .font(.caption)
             }
             .padding(8)
             .background(Color.gray.opacity(0.05))
@@ -46,10 +76,12 @@ struct DebugToolsView: View {
         #endif
     }
 
-    /// Seeds one session per day for the past 7 days
+    // MARK: - Demo Data Seeder
+
     private func seedDemoData() {
         let calendar = Calendar.current
         let now = Date()
+
         let seeded: [FlowSession] = (0..<7).map { offset in
             let day = calendar.date(byAdding: .day, value: -offset, to: now)!
             return FlowSession(id: UUID(), startDate: day, duration: 60 * 25)
