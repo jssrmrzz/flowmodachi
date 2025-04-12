@@ -18,11 +18,11 @@ struct MenuBarContentView: View {
     // MARK: - Session Tracking
     @State private var sessionCountedToday = false
     @StateObject private var sessionManager = SessionManager()
-    @AppStorage("showStreaks") private var showStreaks: Bool = true
-    
-    // MARK: - Evolution Tracker
     @StateObject private var evolutionTracker = EvolutionTracker()
+    @AppStorage("showStreaks") private var showStreaks: Bool = true
 
+    // MARK: - External Environment
+    @EnvironmentObject var petManager: PetManager
 
     // MARK: - UI Toggles
     @State private var showStats = false
@@ -32,7 +32,7 @@ struct MenuBarContentView: View {
     // MARK: - View Body
     var body: some View {
         VStack(spacing: 16) {
-            // MARK: - Title + Stats Toggle Button
+            // Title & Toggle Info
             HStack {
                 Text("Flowmodachi")
                     .font(.title2)
@@ -51,7 +51,7 @@ struct MenuBarContentView: View {
                 .buttonStyle(PlainButtonStyle())
             }
 
-            // MARK: - Missed Yesterday Notification
+            // Missed Yesterday Banner
             if didMissYesterday {
                 Text("Flowmodachi missed you yesterday 💤")
                     .font(.caption)
@@ -62,7 +62,7 @@ struct MenuBarContentView: View {
                     .transition(.opacity)
             }
 
-            // MARK: - Stats View
+            // Stats Panel
             if showStats {
                 SessionStatsView(
                     currentStreak: sessionManager.currentStreak,
@@ -73,17 +73,17 @@ struct MenuBarContentView: View {
                 .padding(.bottom, 8)
             }
 
-            // MARK: - Debug Tools
+            // Debug Tools
             DebugToolsView()
                 .environmentObject(sessionManager)
                 .padding(.top, 4)
 
-            // MARK: - Streak View
+            // Optional Streak View
             if showStreaks {
                 StreakView(sessions: sessionManager.sessions)
             }
 
-            // MARK: - Summary Info
+            // Today + Longest
             VStack(spacing: 4) {
                 Text("🕒 Today: \(sessionManager.totalMinutesToday()) min")
                     .font(.caption)
@@ -93,7 +93,7 @@ struct MenuBarContentView: View {
                     .foregroundColor(.gray)
             }
 
-            // MARK: - Visual View
+            // Creature UI
             FlowmodachiVisualView(
                 elapsedSeconds: elapsedSeconds,
                 isSleeping: isOnBreak,
@@ -103,8 +103,7 @@ struct MenuBarContentView: View {
             )
             .environmentObject(evolutionTracker)
 
-
-            // MARK: - Break or Flow Timer
+            // Timer & Controls
             if isOnBreak {
                 Button("End Break Early") {
                     endBreak()
@@ -152,14 +151,14 @@ struct MenuBarContentView: View {
         .frame(width: 280)
     }
 
-    // MARK: - Time Formatting
+    // MARK: - Time Format
     private var formattedTime: String {
         let minutes = elapsedSeconds / 60
         let seconds = elapsedSeconds % 60
         return String(format: "%02d:%02d", minutes, seconds)
     }
 
-    // MARK: - Timer Controls
+    // MARK: - Timer Logic
     private func startTimer() {
         isFlowing = true
         sessionCountedToday = false
@@ -181,7 +180,7 @@ struct MenuBarContentView: View {
         sessionCountedToday = false
     }
 
-    // MARK: - Break Controls
+    // MARK: - Break Logic
     private func suggestBreak() {
         #if DEBUG
         let suggestedBreak = 0.25
@@ -214,15 +213,17 @@ struct MenuBarContentView: View {
         let breakTaken = breakTotalDuration - breakSecondsRemaining
         evolutionTracker.addBreakCredit(breakTaken)
 
+        // 🎉 Try evolving the pet!
+        petManager.evolveIfEligible()
+
         isOnBreak = false
         breakSecondsRemaining = 0
         elapsedSeconds = 0
         playBreakEndSound()
         recordSessionIfEligible()
     }
-    
 
-    // MARK: - Session Recording
+    // MARK: - Record Session
     private func recordSessionIfEligible() {
         let today = Calendar.current.startOfDay(for: Date())
         let alreadyRecorded = sessionManager.sessions.contains {
@@ -249,7 +250,7 @@ struct MenuBarContentView: View {
         NSSound(named: "Glass")?.play()
     }
 
-    // MARK: - Mood & Notifications
+    // MARK: - Mood Logic
     private var didMissYesterday: Bool {
         #if DEBUG
         if debugMissedYesterday {

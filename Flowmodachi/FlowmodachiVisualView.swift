@@ -11,11 +11,8 @@ enum CreatureMood {
 
 struct FlowmodachiVisualView: View {
     @EnvironmentObject var evolutionTracker: EvolutionTracker
+    @EnvironmentObject var petManager: PetManager
     @AppStorage("debugEvolutionStage") private var debugOverrideStage: Int = -1
-
-    private var displayedStage: Int {
-        debugOverrideStage >= 0 ? debugOverrideStage : evolutionTracker.currentStage
-    }
 
     // MARK: - Inputs
     let elapsedSeconds: Int
@@ -24,18 +21,9 @@ struct FlowmodachiVisualView: View {
     let breakTotalSeconds: Int
     let mood: CreatureMood
 
-    // MARK: - Evolution Stages (fallback SF Symbols)
-    private let stages: [(symbol: String, label: String)] = [
-        ("sun.min", "Stage 1"),
-        ("sun.min.fill", "Stage 2"),
-        ("sun.max", "Stage 3"),
-        ("sun.max.fill", "Final Form")
-    ]
-
     // MARK: - Local State
     @State private var isPulsing = false
     @State private var wobble = false
-    @AppStorage("debugEvolutionStage") private var debugEvolutionStage: Int = -1
 
     // MARK: - Body
     var body: some View {
@@ -43,15 +31,15 @@ struct FlowmodachiVisualView: View {
             ZStack {
                 backgroundRing
 
-                Image("flow_stage\(displayedStage + 1)")
+                Image(petManager.currentCharacter.imageName)
                     .resizable()
                     .interpolation(.none)
                     .scaledToFit()
                     .frame(width: 36, height: 36)
-                    .rotationEffect(.degrees(displayedStage == 0 && wobble ? 4 : 0), anchor: .center)
+                    .rotationEffect(.degrees(isEggWobbleActive ? 4 : 0))
                     .animation(.easeInOut(duration: 0.4), value: wobble)
                     .transition(.scale.combined(with: .opacity))
-                    .id(displayedStage)
+                    .id(petManager.currentCharacter.id)
 
                 if isSleeping {
                     Text(formattedBreakTime)
@@ -70,7 +58,7 @@ struct FlowmodachiVisualView: View {
             }
 
             #if DEBUG
-            if debugEvolutionStage >= 0 {
+            if debugOverrideStage >= 0 {
                 Text("Debug Stage Override Active")
                     .font(.caption2)
                     .foregroundColor(.secondary)
@@ -84,8 +72,24 @@ struct FlowmodachiVisualView: View {
         .onChange(of: isSleeping) { _, newValue in
             isPulsing = newValue
         }
-        .onChange(of: displayedStage) { _, _ in
+        .onChange(of: petManager.currentCharacter.id) { _, _ in
             startStageAnimationLoop()
+        }
+    }
+
+    // MARK: - Animation Logic
+
+    private var isEggWobbleActive: Bool {
+        petManager.currentCharacter.stage == 0 && wobble
+    }
+
+    private func startStageAnimationLoop() {
+        guard petManager.currentCharacter.stage == 0 else { return }
+        Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
+            withAnimation { wobble = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                withAnimation { wobble = false }
+            }
         }
     }
 
@@ -115,43 +119,15 @@ struct FlowmodachiVisualView: View {
     }
 
     private var flowProgress: Double {
-        let totalTime: Double = 9.0 // For testing/demo
+        let totalTime: Double = 9.0
         return min(Double(elapsedSeconds) / totalTime, 1.0)
     }
 
     private var moodLabel: String {
         switch mood {
-        case .happy:
-            return "Feeling great!"
-        case .neutral:
-            return stages[safe: evolutionTracker.currentStage]?.label ?? "Stage 1"
-        case .sleepy:
-            return "A bit sleepy 💤"
-        }
-    }
-
-    private func startStageAnimationLoop() {
-        guard displayedStage == 0 else { return }
-
-        Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
-            withAnimation {
-                wobble.toggle()
-            }
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                withAnimation {
-                    wobble.toggle()
-                }
-            }
+        case .happy: return "Feeling great!"
+        case .neutral: return "Steady focus"
+        case .sleepy: return "A bit sleepy 💤"
         }
     }
 }
-
-// MARK: - Safe Array Indexing Extension
-
-private extension Array {
-    subscript(safe index: Int) -> Element? {
-        indices.contains(index) ? self[index] : nil
-    }
-}
-
