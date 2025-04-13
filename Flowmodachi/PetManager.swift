@@ -19,54 +19,66 @@ class PetManager: ObservableObject {
     private let characterMap: [String: PetCharacter]
 
     init() {
-        // MARK: - Character Map Setup
         var map: [String: PetCharacter] = [:]
+        var eggIds: [String] = []
 
-        // Add 16 Stage 0 Eggs with unique paths to Stage 1
-        let eggIds = (0..<16).map { i -> String in
-            let id = "egg_\(i)"
-            map[id] = PetCharacter(
-                id: id,
+        // Dynamically build characters based on existing eggs
+        var index = 0
+        while true {
+            let eggId = "egg_\(index)"
+            let form1Id = formId(index, stage: 1)
+
+            // Check if asset exists (optional but recommended for safety)
+            guard NSImage(named: eggId) != nil else { break }
+
+            // Stage 0
+            map[eggId] = PetCharacter(
+                id: eggId,
                 stage: 0,
-                imageName: id,
-                nextStageIds: ["form_\(i)_1"]
+                imageName: eggId,
+                nextStageIds: [form1Id]
             )
-            return id
-        }
+            eggIds.append(eggId)
 
-        // Add 16 Stage 1 Forms, each mapping to its unique Stage 2
-        for i in 0..<16 {
-            let id = "form_\(i)_1"
-            map[id] = PetCharacter(
-                id: id,
+            // Stage 1
+            let form2Id = formId(index, stage: 2)
+            map[form1Id] = PetCharacter(
+                id: form1Id,
                 stage: 1,
-                imageName: id,
-                nextStageIds: ["form_\(i)_2"]
+                imageName: form1Id,
+                nextStageIds: [form2Id]
             )
-        }
 
-        // Add 16 Stage 2 Forms (lineage-aware, but no evolution to Stage 3 yet)
-        for i in 0..<16 {
-            let id = "form_\(i)_2"
-            map[id] = PetCharacter(
-                id: id,
+            // Stage 2
+            let form3Id = formId(index, stage: 3)
+            map[form2Id] = PetCharacter(
+                id: form2Id,
                 stage: 2,
-                imageName: id,
-                nextStageIds: [] // Will later add links to form_\(i)_3a, _3b, etc.
+                imageName: form2Id,
+                nextStageIds: [form3Id]
             )
+
+            // Stage 3
+            map[form3Id] = PetCharacter(
+                id: form3Id,
+                stage: 3,
+                imageName: form3Id,
+                nextStageIds: []
+            )
+
+            index += 1
         }
 
         self.characterMap = map
 
-        // Load saved character or assign a random egg
+        // Load current or assign new egg
         if let savedId = UserDefaults.standard.string(forKey: storageKey),
            let character = characterMap[savedId] {
             self.currentCharacter = character
         } else {
-            let randomEggId = eggIds.randomElement()!
-            let starter = characterMap[randomEggId]!
-            self.currentCharacter = starter
-            UserDefaults.standard.set(starter.id, forKey: storageKey)
+            let starterId = eggIds.randomElement()!
+            self.currentCharacter = map[starterId]!
+            UserDefaults.standard.set(starterId, forKey: storageKey)
         }
     }
 
@@ -88,7 +100,7 @@ class PetManager: ObservableObject {
         }
     }
 
-    // MARK: - Debugging / Testing
+    // MARK: - Debug Reset
 
     func resetToStart() {
         let eggIds = characterMap.values.filter { $0.stage == 0 }.map { $0.id }
@@ -104,5 +116,17 @@ class PetManager: ObservableObject {
             #endif
         }
     }
+
+    // MARK: - Final Form Check
+
+    var isFinalStage: Bool {
+        currentCharacter.nextStageIds.isEmpty
+    }
+}
+
+// MARK: - Global Utility
+
+private func formId(_ i: Int, stage: Int) -> String {
+    return "form_\(i)_\(stage)"
 }
 
