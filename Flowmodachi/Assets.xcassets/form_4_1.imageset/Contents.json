@@ -1,17 +1,15 @@
 {
   "images" : [
     {
-      "filename" : "form_4_1 2.png",
+      "filename" : "form_4_1.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "form_4_1 1.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "form_4_1.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
