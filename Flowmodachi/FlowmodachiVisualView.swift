@@ -40,6 +40,8 @@ struct FlowmodachiVisualView: View {
     @State private var auraColor: Color = .purple.opacity(0.3)
     @State private var particles: [SparkleParticle] = []
     @State private var auraRotationAngle: Double = 0
+    @State private var isAuraPulsing = false
+
 
     private let auraColors: [Color] = [
         .purple.opacity(0.3),
@@ -156,16 +158,18 @@ struct FlowmodachiVisualView: View {
                         .rotationEffect(.degrees(auraRotationAngle))
 
                     // 🌈 Crisp Rotating Ring on Top
+                    // 🌈 Rainbow Aura Glow (Pulsing & Rotating)
                     Circle()
                         .stroke(
                             AngularGradient(
                                 gradient: Gradient(colors: [.purple, .blue, .mint, .green, .yellow, .orange, .pink, .purple]),
                                 center: .center
                             ),
-                            lineWidth: 5
+                            lineWidth: 10
                         )
-                        .scaleEffect(1.2)
-                        .opacity(0.8)
+                        .scaleEffect(isAuraPulsing ? 1.3 : 1.2) // subtle pulsing
+                        .blur(radius: 12)
+                        .opacity(0.4)
                         .rotationEffect(.degrees(auraRotationAngle))
 
                     // ✨ Floating Zen Particles
@@ -289,11 +293,18 @@ struct FlowmodachiVisualView: View {
             Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
                 auraRotationAngle += 0.2
             }
-            Timer.scheduledTimer(withTimeInterval: 4.0, repeats: true) { _ in
-                withAnimation(.easeInOut(duration: 4.0)) {
+            Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+                withAnimation(.easeInOut(duration: 2.0)) {
                     isFloating.toggle()
                 }
             }
+            withAnimation(
+                Animation.easeInOut(duration: 3.0)
+                    .repeatForever(autoreverses: true)
+            ) {
+                isAuraPulsing = true
+            }
+
 
         default:
             break
@@ -338,4 +349,16 @@ struct FlowmodachiVisualView: View {
         }
     }
 }
+//#Preview {
+//    FlowmodachiVisualView(
+//        elapsedSeconds: 120,
+//        isSleeping: false,
+//        breakSecondsRemaining: 300,
+//        breakTotalSeconds: 600,
+//        mood: .happy
+//    )
+//    .environmentObject(PetManager()) // Mock objects
+//    .environmentObject(EvolutionTracker()) // Mock objects
+//}
+
 
