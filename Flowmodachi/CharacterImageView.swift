@@ -1,5 +1,6 @@
 import SwiftUI
 
+// MARK: - Character Image View
 struct CharacterImageView: View {
     let imageName: String
     let characterId: String
@@ -17,7 +18,7 @@ struct CharacterImageView: View {
 
     var body: some View {
         ZStack {
-            // ✨ Evolution Glow Flash
+            // 🌟 Evolution Glow Flash
             if showGlowFlash {
                 Circle()
                     .fill(Color.white)
@@ -27,7 +28,7 @@ struct CharacterImageView: View {
                     .transition(.opacity)
             }
 
-            // 🧬 Character Image
+            // 🧬 Main Character
             Image(imageName)
                 .resizable()
                 .interpolation(.none)
@@ -47,11 +48,16 @@ struct CharacterImageView: View {
                 .animation(.easeInOut(duration: 0.3), value: isHopping)
                 .animation(.easeInOut(duration: 0.5), value: isWiggling)
                 .animation(.easeInOut(duration: 0.4), value: isBouncing)
-                .animation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true), value: isFloating)
+                .animation(
+                    .easeInOut(duration: 2.5).repeatForever(autoreverses: true),
+                    value: isFloating
+                )
                 .transition(.asymmetric(insertion: .opacity.combined(with: .scale), removal: .opacity))
                 .id(characterId)
         }
     }
+
+    // MARK: - Computed Visual Properties
 
     private var characterSize: CGFloat {
         switch stage {
@@ -92,4 +98,3 @@ struct CharacterImageView: View {
         }
     }
 }
-

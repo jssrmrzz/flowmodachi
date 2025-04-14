@@ -34,11 +34,18 @@ struct FlowmodachiVisualView: View {
     @State private var isPulsing = false
     @State private var auraColor: Color = .purple.opacity(0.3)
     @State private var particles: [SparkleParticle] = []
-    @State private var showEggPopFlash = false
-    @StateObject private var animationManager = FlowmodachiAnimationManager()
     @State private var previousCharacterId: String? = nil
+    @State private var previousStage: Int = 0
+    @State private var fromStage: Int = 0
+    @State private var toStage: Int = 0
     @State private var isBursting = false
     @State private var showGlowFlash = false
+    @State private var showStage2Shockwave = false
+    @State private var showStage2Flash = false
+    @State private var showEggPopFlash = false
+    @StateObject private var animationManager = FlowmodachiAnimationManager()
+    @State private var showLightningBolts = false
+
 
     private let auraColors: [Color] = [
         .purple.opacity(0.3), .blue.opacity(0.3), .teal.opacity(0.3),
@@ -52,39 +59,20 @@ struct FlowmodachiVisualView: View {
                 backgroundRing
 
                 if characterImageExists {
-                    ZStack {
-                        if let previousId = previousCharacterId, previousId != petManager.currentCharacter.id {
-                            CharacterImageView(
-                                imageName: previousId,
-                                characterId: previousId,
-                                stage: petManager.currentCharacter.stage,
-                                wobble: false,
-                                isHopping: false,
-                                isWiggling: false,
-                                isBouncing: false,
-                                isFloating: false,
-                                isBursting: false,
-                                showGlowFlash: false
-                            )
-                            .opacity(0.0)
-                            .transition(.opacity)
-                        }
-
-                        CharacterImageView(
-                            imageName: petManager.currentCharacter.imageName,
-                            characterId: petManager.currentCharacter.id,
-                            stage: petManager.currentCharacter.stage,
-                            wobble: animationManager.wobble,
-                            isHopping: animationManager.isHopping,
-                            isWiggling: animationManager.isWiggling,
-                            isBouncing: animationManager.isBouncing,
-                            isFloating: animationManager.isFloating,
-                            isBursting: isBursting,
-                            showGlowFlash: showGlowFlash
-                        )
-                        .transition(.opacity)
-                        .overlay(auraOverlay)
-                    }
+                    CharacterImageView(
+                        imageName: petManager.currentCharacter.imageName,
+                        characterId: petManager.currentCharacter.id,
+                        stage: petManager.currentCharacter.stage,
+                        wobble: animationManager.wobble,
+                        isHopping: animationManager.isHopping,
+                        isWiggling: animationManager.isWiggling,
+                        isBouncing: animationManager.isBouncing,
+                        isFloating: animationManager.isFloating,
+                        isBursting: isBursting,
+                        showGlowFlash: showGlowFlash
+                    )
+                    .transition(.opacity)
+                    .overlay(auraOverlay)
                 } else {
                     Image(systemName: "questionmark.circle")
                         .resizable()
@@ -100,7 +88,17 @@ struct FlowmodachiVisualView: View {
                         )
                 }
 
-                EggPopFlashView(isVisible: showEggPopFlash)
+                StageTransitionOverlayView(
+                    fromStage: fromStage,
+                    toStage: toStage,
+                    showEggPopFlash: $showEggPopFlash,
+                    showStage2Shockwave: $showStage2Shockwave,
+                    showStage2Flash: $showStage2Flash,
+                    showGlowFlash: $showGlowFlash,
+                    isBursting: $isBursting,
+                    showLightningBolts: $showLightningBolts
+
+                )
 
                 if isSleeping {
                     Text(formattedBreakTime)
@@ -136,26 +134,12 @@ struct FlowmodachiVisualView: View {
         }
         .onChange(of: petManager.currentCharacter.id) { oldId, newId in
             previousCharacterId = oldId
+            fromStage = previousStage
+            toStage = petManager.currentCharacter.stage
+            previousStage = toStage
 
-            withAnimation(.easeOut(duration: 0.3)) {
-                showEggPopFlash = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                showEggPopFlash = false
-            }
-
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
-                isBursting = true
-                showGlowFlash = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                withAnimation {
-                    isBursting = false
-                    showGlowFlash = false
-                }
-            }
-
-            animationManager.startAnimations(forStage: petManager.currentCharacter.stage)
+            triggerTransitionAnimations(from: fromStage, to: toStage)
+            animationManager.startAnimations(forStage: toStage)
         }
         .onChange(of: debugOverrideStage) { _, newValue in
             guard newValue >= 0, newValue <= 3 else { return }
@@ -170,15 +154,6 @@ struct FlowmodachiVisualView: View {
                 withAnimation(.spring()) {
                     petManager.currentCharacter = overrideCharacter
                     UserDefaults.standard.set(overrideCharacter.id, forKey: "currentCharacterID")
-                }
-
-                if newValue == 1 {
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        showEggPopFlash = true
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                        showEggPopFlash = false
-                    }
                 }
             }
         }
@@ -243,4 +218,41 @@ struct FlowmodachiVisualView: View {
             )
         }
     }
+
+    private func triggerTransitionAnimations(from: Int, to: Int) {
+        if fromStage == 1 && toStage == 2 {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.4)) {
+                isBursting = true
+            }
+
+            showStage2Flash = true
+            showStage2Shockwave = true
+            showLightningBolts = true
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                showStage2Flash = false
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                withAnimation {
+                    isBursting = false
+                    showStage2Shockwave = false
+                    showLightningBolts = false
+                }
+            }
+        }
+
+
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+            isBursting = true
+            showGlowFlash = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            withAnimation {
+                isBursting = false
+                showGlowFlash = false
+            }
+        }
+    }
 }
+
