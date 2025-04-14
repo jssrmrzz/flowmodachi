@@ -32,24 +32,17 @@ struct FlowmodachiVisualView: View {
 
     // MARK: - Local State
     @State private var isPulsing = false
-    @State private var wobble = false
-    @State private var isHopping = false
-    @State private var isWiggling = false
-    @State private var isBouncing = false
-    @State private var isFloating = false
     @State private var auraColor: Color = .purple.opacity(0.3)
     @State private var particles: [SparkleParticle] = []
-    @State private var auraRotationAngle: Double = 0
-    @State private var isAuraPulsing = false
-
+    @State private var showEggPopFlash = false
+    @StateObject private var animationManager = FlowmodachiAnimationManager()
+    @State private var previousCharacterId: String? = nil
+    @State private var isBursting = false
+    @State private var showGlowFlash = false
 
     private let auraColors: [Color] = [
-        .purple.opacity(0.3),
-        .blue.opacity(0.3),
-        .teal.opacity(0.3),
-        .mint.opacity(0.3),
-        .yellow.opacity(0.3),
-        .pink.opacity(0.3)
+        .purple.opacity(0.3), .blue.opacity(0.3), .teal.opacity(0.3),
+        .mint.opacity(0.3), .yellow.opacity(0.3), .pink.opacity(0.3)
     ]
 
     // MARK: - Body
@@ -59,22 +52,39 @@ struct FlowmodachiVisualView: View {
                 backgroundRing
 
                 if characterImageExists {
-                    Image(petManager.currentCharacter.imageName)
-                        .resizable()
-                        .interpolation(.none)
-                        .scaledToFit()
-                        .frame(width: characterSize, height: characterSize)
-                        .rotationEffect(rotationAngle)
-                        .scaleEffect(scaleAmount)
-                        .offset(y: verticalOffset)
-                        .animation(.easeInOut(duration: 0.4), value: wobble)
-                        .animation(.easeInOut(duration: 0.3), value: isHopping)
-                        .animation(.easeInOut(duration: 0.5), value: isWiggling)
-                        .animation(.easeInOut(duration: 0.4), value: isBouncing)
-                        .animation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true), value: isFloating)
-                        .transition(.scale.combined(with: .opacity))
-                        .id(petManager.currentCharacter.id)
+                    ZStack {
+                        if let previousId = previousCharacterId, previousId != petManager.currentCharacter.id {
+                            CharacterImageView(
+                                imageName: previousId,
+                                characterId: previousId,
+                                stage: petManager.currentCharacter.stage,
+                                wobble: false,
+                                isHopping: false,
+                                isWiggling: false,
+                                isBouncing: false,
+                                isFloating: false,
+                                isBursting: false,
+                                showGlowFlash: false
+                            )
+                            .opacity(0.0)
+                            .transition(.opacity)
+                        }
+
+                        CharacterImageView(
+                            imageName: petManager.currentCharacter.imageName,
+                            characterId: petManager.currentCharacter.id,
+                            stage: petManager.currentCharacter.stage,
+                            wobble: animationManager.wobble,
+                            isHopping: animationManager.isHopping,
+                            isWiggling: animationManager.isWiggling,
+                            isBouncing: animationManager.isBouncing,
+                            isFloating: animationManager.isFloating,
+                            isBursting: isBursting,
+                            showGlowFlash: showGlowFlash
+                        )
+                        .transition(.opacity)
                         .overlay(auraOverlay)
+                    }
                 } else {
                     Image(systemName: "questionmark.circle")
                         .resizable()
@@ -89,6 +99,8 @@ struct FlowmodachiVisualView: View {
                                 .padding(.top, 30)
                         )
                 }
+
+                EggPopFlashView(isVisible: showEggPopFlash)
 
                 if isSleeping {
                     Text(formattedBreakTime)
@@ -116,25 +128,59 @@ struct FlowmodachiVisualView: View {
         }
         .onAppear {
             isPulsing = isSleeping
-            startStageAnimationLoop()
-
-            if particles.isEmpty {
-                particles = (0..<10).map { i in
-                    SparkleParticle(
-                        baseX: CGFloat.random(in: -50...50),
-                        baseY: CGFloat.random(in: -50...50),
-                        size: CGFloat.random(in: 4...7),
-                        delay: Double(i) * 0.25,
-                        driftAmount: CGFloat.random(in: 3...6)
-                    )
-                }
-            }
+            animationManager.startAnimations(forStage: petManager.currentCharacter.stage)
+            generateParticlesIfNeeded()
         }
         .onChange(of: isSleeping) { _, newValue in
             isPulsing = newValue
         }
-        .onChange(of: petManager.currentCharacter.id) { _, _ in
-            startStageAnimationLoop()
+        .onChange(of: petManager.currentCharacter.id) { oldId, newId in
+            previousCharacterId = oldId
+
+            withAnimation(.easeOut(duration: 0.3)) {
+                showEggPopFlash = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                showEggPopFlash = false
+            }
+
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+                isBursting = true
+                showGlowFlash = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                withAnimation {
+                    isBursting = false
+                    showGlowFlash = false
+                }
+            }
+
+            animationManager.startAnimations(forStage: petManager.currentCharacter.stage)
+        }
+        .onChange(of: debugOverrideStage) { _, newValue in
+            guard newValue >= 0, newValue <= 3 else { return }
+
+            let baseIdPrefix = petManager.currentCharacter.id.components(separatedBy: "_").dropLast().joined(separator: "_")
+
+            let match = petManager.characterMap.values.first {
+                $0.stage == newValue && $0.id.contains(baseIdPrefix)
+            }
+
+            if let overrideCharacter = match {
+                withAnimation(.spring()) {
+                    petManager.currentCharacter = overrideCharacter
+                    UserDefaults.standard.set(overrideCharacter.id, forKey: "currentCharacterID")
+                }
+
+                if newValue == 1 {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        showEggPopFlash = true
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                        showEggPopFlash = false
+                    }
+                }
+            }
         }
     }
 
@@ -142,192 +188,28 @@ struct FlowmodachiVisualView: View {
     private var auraOverlay: some View {
         Group {
             if petManager.currentCharacter.stage == 3 {
-                ZStack {
-                    // 🌈 Rainbow Aura Glow (Blurred Background Ring)
-                    Circle()
-                        .stroke(
-                            AngularGradient(
-                                gradient: Gradient(colors: [.purple, .blue, .mint, .green, .yellow, .orange, .pink, .purple]),
-                                center: .center
-                            ),
-                            lineWidth: 10
-                        )
-                        .scaleEffect(1.25)
-                        .blur(radius: 12)
-                        .opacity(0.4)
-                        .rotationEffect(.degrees(auraRotationAngle))
-
-                    // 🌈 Crisp Rotating Ring on Top
-                    // 🌈 Rainbow Aura Glow (Pulsing & Rotating)
-                    Circle()
-                        .stroke(
-                            AngularGradient(
-                                gradient: Gradient(colors: [.purple, .blue, .mint, .green, .yellow, .orange, .pink, .purple]),
-                                center: .center
-                            ),
-                            lineWidth: 10
-                        )
-                        .scaleEffect(isAuraPulsing ? 1.3 : 1.2) // subtle pulsing
-                        .blur(radius: 12)
-                        .opacity(0.4)
-                        .rotationEffect(.degrees(auraRotationAngle))
-
-                    // ✨ Floating Zen Particles
-                    ForEach(particles) { particle in
-                        Circle()
-                            .fill(auraColor)
-                            .frame(width: particle.size, height: particle.size)
-                            .offset(
-                                x: particle.baseX + (isFloating ? particle.driftAmount : -particle.driftAmount),
-                                y: particle.baseY + (isFloating ? -particle.driftAmount : particle.driftAmount)
-                            )
-                            .opacity(isFloating ? 0.7 : 0.4)
-                            .animation(
-                                Animation.easeInOut(duration: 4.0)
-                                    .repeatForever(autoreverses: true)
-                                    .delay(particle.delay),
-                                value: isFloating
-                            )
-                    }
-                }
+                AuraRingView(
+                    rotationAngle: animationManager.auraRotation,
+                    isPulsing: animationManager.isAuraPulsing,
+                    particles: particles,
+                    auraColor: auraColor,
+                    isFloating: animationManager.isFloating
+                )
             }
-        }
-    }
-
-
-
-
-    // MARK: - Computed Properties
-
-    private var characterImageExists: Bool {
-        NSImage(named: petManager.currentCharacter.imageName) != nil
-    }
-
-    private var characterSize: CGFloat {
-        switch petManager.currentCharacter.stage {
-        case 0: return 36
-        case 1: return 65
-        case 2: return 70
-        case 3: return 80
-        default: return 36
-        }
-    }
-
-    private var rotationAngle: Angle {
-        if petManager.currentCharacter.stage == 0 && wobble {
-            return .degrees(4)
-        } else if petManager.currentCharacter.stage == 2 && isWiggling {
-            return .degrees(3)
-        } else {
-            return .degrees(0)
-        }
-    }
-
-    private var scaleAmount: CGFloat {
-        if petManager.currentCharacter.stage == 1 && isHopping {
-            return 1.05
-        } else if petManager.currentCharacter.stage == 2 && isBouncing {
-            return 1.03
-        } else {
-            return 1.0
-        }
-    }
-
-    private var verticalOffset: CGFloat {
-        switch petManager.currentCharacter.stage {
-        case 0: return isHopping ? -4 : 0
-        case 2: return isBouncing ? -6 : 0
-        case 3: return isFloating ? -4 : 4
-        default: return 0
-        }
-    }
-
-    // MARK: - Animation Dispatcher
-
-    private func startStageAnimationLoop() {
-        let stage = petManager.currentCharacter.stage
-
-        wobble = false
-        isHopping = false
-        isWiggling = false
-        isBouncing = false
-        isFloating = false
-
-        switch stage {
-        case 0:
-            Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
-                withAnimation { wobble = true; isHopping = true }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                    withAnimation {
-                        wobble = false
-                        isHopping = false
-                    }
-                }
-            }
-
-        case 1:
-            Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
-                withAnimation { isHopping = true }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    withAnimation { isHopping = false }
-                }
-            }
-
-        case 2:
-            Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { _ in
-                withAnimation(.easeInOut(duration: 0.5)) {
-                    isWiggling = true
-                    isBouncing = true
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    withAnimation(.easeInOut(duration: 0.4)) {
-                        isWiggling = false
-                        isBouncing = false
-                    }
-                }
-            }
-
-        case 3:
-            auraColor = auraColors.randomElement() ?? .purple.opacity(0.3)
-            auraRotationAngle = 0
-            Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
-                auraRotationAngle += 0.2
-            }
-            Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
-                withAnimation(.easeInOut(duration: 2.0)) {
-                    isFloating.toggle()
-                }
-            }
-            withAnimation(
-                Animation.easeInOut(duration: 3.0)
-                    .repeatForever(autoreverses: true)
-            ) {
-                isAuraPulsing = true
-            }
-
-
-        default:
-            break
         }
     }
 
     // MARK: - Visual Helpers
+    private var characterImageExists: Bool {
+        NSImage(named: petManager.currentCharacter.imageName) != nil
+    }
 
     private var backgroundRing: some View {
-        Group {
-            if isSleeping {
-                Circle()
-                    .stroke(Color.blue.opacity(0.3), lineWidth: 8)
-                    .scaleEffect(isPulsing ? 1.1 : 0.9)
-                    .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: isPulsing)
-            } else {
-                Circle()
-                    .trim(from: 0, to: flowProgress)
-                    .stroke(Color.purple, style: StrokeStyle(lineWidth: 5, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .animation(.easeInOut(duration: 0.4), value: flowProgress)
-            }
-        }
+        BackgroundRingView(
+            isSleeping: isSleeping,
+            isPulsing: isPulsing,
+            flowProgress: flowProgress
+        )
     }
 
     private var formattedBreakTime: String {
@@ -348,17 +230,17 @@ struct FlowmodachiVisualView: View {
         case .sleepy: return "A bit sleepy 💤"
         }
     }
+
+    private func generateParticlesIfNeeded() {
+        guard particles.isEmpty else { return }
+        particles = (0..<10).map { i in
+            SparkleParticle(
+                baseX: CGFloat.random(in: -50...50),
+                baseY: CGFloat.random(in: -50...50),
+                size: CGFloat.random(in: 4...7),
+                delay: Double(i) * 0.25,
+                driftAmount: CGFloat.random(in: 3...6)
+            )
+        }
+    }
 }
-//#Preview {
-//    FlowmodachiVisualView(
-//        elapsedSeconds: 120,
-//        isSleeping: false,
-//        breakSecondsRemaining: 300,
-//        breakTotalSeconds: 600,
-//        mood: .happy
-//    )
-//    .environmentObject(PetManager()) // Mock objects
-//    .environmentObject(EvolutionTracker()) // Mock objects
-//}
-
-

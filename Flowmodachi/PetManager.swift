@@ -16,7 +16,7 @@ class PetManager: ObservableObject {
     @Published var currentCharacter: PetCharacter
 
     private let storageKey = "currentCharacterID"
-    private let characterMap: [String: PetCharacter]
+    private(set) var characterMap: [String: PetCharacter]
 
     init() {
         var map: [String: PetCharacter] = [:]
