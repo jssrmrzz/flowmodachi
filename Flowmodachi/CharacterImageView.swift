@@ -17,8 +17,7 @@ struct CharacterImageView: View {
 
     // MARK: - State
     @State private var fadeIn = false
-    @State private var orbitAngle: Double = 0
-    @State private var timer: Timer?
+    @State private var orbitStartTime = Date()
     @State private var rippleTrigger = false
 
     // MARK: - Body
@@ -45,7 +44,9 @@ struct CharacterImageView: View {
 
             // ⚡️ Stage 2: Orbiting Bolt Effect
             if stage == 2 {
-                orbitingBolts
+                OrbitingBoltEffect(characterSize: characterSize)
+                    .id("orbit-\(characterId)") // force reanimation
+                    .zIndex(5) // above character
             }
 
             // 🌟 Shared: Glow Flash on Evolution
@@ -73,11 +74,7 @@ struct CharacterImageView: View {
                 .animation(.easeInOut(duration: 0.3), value: isHopping)
                 .animation(.easeInOut(duration: 0.5), value: isWiggling)
                 .animation(.easeInOut(duration: 0.4), value: isBouncing)
-                .animation(
-                    .easeInOut(duration: 2.5)
-                        .repeatForever(autoreverses: true),
-                    value: isFloating
-                )
+                .animation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true), value: isFloating)
                 .transition(.asymmetric(insertion: .opacity.combined(with: .scale), removal: .opacity))
                 .id(characterId)
                 .zIndex(3)
@@ -86,70 +83,30 @@ struct CharacterImageView: View {
                     withAnimation(.easeInOut(duration: 0.5)) {
                         fadeIn = true
                     }
-                }
-        }
-        .task(id: "\(characterId)-\(stage)-\(isHopping)") {
-            if stage == 1 {
-                if isHopping {
-                    rippleTrigger = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                        rippleTrigger = true
+
+                    if stage == 2 {
+                        orbitStartTime = Date() // reset bolt timing
                     }
                 }
-            }
-
-            if stage == 2 {
-                orbitAngle = 0
-                timer?.invalidate()
-                timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { _ in
-                    orbitAngle += 0.02
+                .onChange(of: isHopping) {
+                    if stage == 1 && isHopping {
+                        rippleTrigger = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            rippleTrigger = true
+                        }
+                    }
                 }
-            }
+
         }
-    }
-
-    // MARK: - Orbiting Bolts (Stage 2 Only)
-    private var orbitingBolts: some View {
-        ZStack {
-            ForEach(0..<6) { i in
-                let angle = (Double(i) / 6.0) * 2 * .pi + orbitAngle
-                let radius: CGFloat = characterSize * 0.9
-                let x = CGFloat(sin(angle)) * radius
-                let y = CGFloat(cos(angle)) * radius * 0.5
-                let z = cos(angle)
-
-                let scale = 0.6 + 0.4 * CGFloat(z)
-                let opacity = 0.4 + 0.6 * CGFloat(z)
-
-                Circle()
-                    .fill(Color.blue.opacity(0.2))
-                    .frame(width: 24, height: 24)
-                    .blur(radius: 8)
-                    .offset(x: x, y: y)
-                    .zIndex(z - 0.1)
-
-                Image(systemName: "bolt")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 12, height: 24)
-                    .foregroundColor(.yellow)
-                    .scaleEffect(scale)
-                    .opacity(opacity)
-                    .offset(x: x, y: y)
-                    .zIndex(z + 0.01)
-            }
-        }
-        .frame(width: characterSize * 2, height: characterSize * 2)
-        .zIndex(2)
     }
 
     // MARK: - Computed View Properties
     private var characterSize: CGFloat {
         switch stage {
-        case 0: return 36
-        case 1: return 65
-        case 2: return 70
-        case 3: return 80
+        case 0: return 40
+        case 1: return 60
+        case 2: return 75
+        case 3: return 85
         default: return 36
         }
     }
@@ -183,3 +140,54 @@ struct CharacterImageView: View {
         }
     }
 }
+
+// MARK: - Orbiting Bolt Effect View
+struct OrbitingBoltEffect: View {
+    let characterSize: CGFloat
+
+    var body: some View {
+        TimelineView(.animation) { timeline in
+            let now = timeline.date.timeIntervalSinceReferenceDate
+            let angleOffset = now * 1.5  // 🌀 Slightly faster
+
+            ZStack {
+                ForEach(0..<6) { i in
+                    let angle = (Double(i) / 6.0) * 2 * .pi + angleOffset
+                    let radius: CGFloat = characterSize * 0.75
+
+                    // Add subtle Y tilt for perspective illusion
+                    let x = CGFloat(sin(angle)) * radius
+                    let y = CGFloat(cos(angle)) * radius * 0.6
+                    let z = cos(angle)
+
+                    let scale = 0.6 + 0.4 * CGFloat(z)
+                    let opacity = 0.3 + 0.7 * CGFloat(z)
+
+                    Group {
+                        // 🔵 Motion Glow Trail
+                        Circle()
+                            .fill(Color.blue.opacity(0.15))
+                            .frame(width: 24, height: 24)
+                            .blur(radius: 8)
+                            .offset(x: x, y: y)
+                            .zIndex(z - 1.9)
+
+                        // ⚡️ Bolt
+                        Image(systemName: "bolt")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 12, height: 24)
+                            .foregroundColor(.yellow)
+                            .scaleEffect(scale)
+                            .opacity(opacity)
+                            .offset(x: x, y: y)
+                            .zIndex(z + 2.0) // ⬅️ boost foreground visibility
+                    }
+                }
+            }
+            .frame(width: characterSize * 2, height: characterSize * 2)
+            .zIndex(5) // 🧠 Ensure this is ABOVE the character!
+        }
+    }
+}
+
