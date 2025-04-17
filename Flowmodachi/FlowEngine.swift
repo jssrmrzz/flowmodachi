@@ -1,3 +1,4 @@
+// FlowEngine.swift
 import Foundation
 import Combine
 import SwiftUI
@@ -11,52 +12,43 @@ class FlowEngine: ObservableObject {
     @Published var breakSecondsRemaining = 0
     @Published var breakTotalDuration = 0
 
-    // MARK: - Private
+    // MARK: - Dependencies
+    let sessionManager: SessionManager
+    let evolutionTracker: EvolutionTracker
+    let petManager: PetManager
+
+    // MARK: - Private State
     private var timer: Timer?
     private var breakTimer: Timer?
     private var sessionCountedToday = false
 
     // MARK: - Init
-    init() {
-        print("🌀 FlowEngine created")
+    init(sessionManager: SessionManager, evolutionTracker: EvolutionTracker, petManager: PetManager) {
+        self.sessionManager = sessionManager
+        self.evolutionTracker = evolutionTracker
+        self.petManager = petManager
 
-        let allKeys = UserDefaults.standard.dictionaryRepresentation().keys
-        print("🧪 UserDefaults keys at launch: \(allKeys)")
-
-        if UserDefaults.standard.bool(forKey: "resumeOnLaunch") {
-            if let restored = SessionPersistenceHelper.restoreSession() {
-                elapsedSeconds = restored
-                print("✅ Flow restored at \(restored)s")
-                startFlowTimer()
-            } else {
-                print("❌ No valid flow session to restore")
-            }
-        }
-
-        print("🧠 FlowEngine INIT done")
+        restoreSessionIfAvailable()
     }
 
-    // MARK: - Flow Control
+    // MARK: - Flow Timer Logic
     func startFlowTimer() {
         isFlowing = true
         sessionCountedToday = false
-
-        print("▶️ Starting flow timer at \(elapsedSeconds)s")
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
             self.elapsedSeconds += 1
             SessionPersistenceHelper.saveSession(elapsedSeconds: self.elapsedSeconds)
         }
     }
 
     func pauseFlowTimer() {
-        print("⏸ Pausing flow at \(elapsedSeconds)s")
         isFlowing = false
         timer?.invalidate()
         timer = nil
     }
 
     func resetFlowTimer() {
-        print("🔄 Resetting flow")
         recordSessionIfEligible()
         pauseFlowTimer()
         elapsedSeconds = 0
@@ -64,16 +56,72 @@ class FlowEngine: ObservableObject {
         SessionPersistenceHelper.clearSession()
     }
 
-    func handleFlowPersistence(isFlowing: Bool) {
-        if isFlowing {
-            print("💾 Persisting flow: \(elapsedSeconds)s")
-            SessionPersistenceHelper.saveSession(elapsedSeconds: elapsedSeconds)
+    // MARK: - Break Logic
+    func suggestBreak() {
+        #if DEBUG
+        let suggestedBreak = 0.25
+        #else
+        let minutes = elapsedSeconds / 60
+        let suggestedBreak = minutes >= 120 ? 30 : min(max(Int(Double(minutes) * 0.2), 5), 20)
+        #endif
+
+        breakTotalDuration = Int(suggestedBreak * 60)
+        breakSecondsRemaining = breakTotalDuration
+        startBreak()
+    }
+
+    private func startBreak() {
+        isFlowing = false
+        isOnBreak = true
+
+        if breakSecondsRemaining <= 0 {
+            endBreak()
+            return
+        }
+
+        breakTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            self.breakSecondsRemaining -= 1
+            BreakPersistenceHelper.saveBreak(remaining: self.breakSecondsRemaining, total: self.breakTotalDuration)
+
+            if self.breakSecondsRemaining <= 0 {
+                self.endBreak()
+            }
+        }
+
+        print("Break started for \(breakTotalDuration) seconds")
+    }
+
+    func endBreak() {
+        print("✅ Break ended cleanly.")
+        // 🛑 Prevent double execution
+        guard isOnBreak else { return }
+
+        isOnBreak = false // ✅ Immediately mark break as over to avoid re-entry
+        breakTimer?.invalidate()
+        breakTimer = nil
+
+        let breakTaken = breakTotalDuration - breakSecondsRemaining
+        evolutionTracker.addBreakCredit(breakTaken)
+        petManager.evolveIfEligible()
+
+        breakSecondsRemaining = 0
+        elapsedSeconds = 0
+        BreakPersistenceHelper.clearBreak()
+        playBreakEndSound()
+        recordSessionIfEligible()
+    }
+
+
+    func handleBreakPersistence(isOnBreak: Bool) {
+        if isOnBreak {
+            BreakPersistenceHelper.saveBreak(remaining: breakSecondsRemaining, total: breakTotalDuration)
         } else {
-            print("🧹 Clearing persisted flow")
-            SessionPersistenceHelper.clearSession()
+            BreakPersistenceHelper.clearBreak()
         }
     }
 
+    // MARK: - Session Logic
     func recordSessionIfEligible() {
         let today = Calendar.current.startOfDay(for: Date())
         let alreadyRecorded = sessionManager.sessions.contains {
@@ -83,12 +131,41 @@ class FlowEngine: ObservableObject {
         if elapsedSeconds >= minimumEligibleSeconds && !alreadyRecorded {
             sessionManager.addSession(duration: elapsedSeconds)
             sessionCountedToday = true
-            print("✅ Session recorded at \(elapsedSeconds)s")
-        } else {
-            print("⚠️ Session not recorded – already exists or not enough time")
+            print("✅ Session recorded at \(elapsedSeconds) seconds")
         }
     }
 
+    func restoreSessionIfAvailable() {
+        print("🪵 Attempting to restore session...") // DEBUG LOG
+
+        guard UserDefaults.standard.bool(forKey: "resumeOnLaunch") else {
+            print("🛑 resumeOnLaunch disabled")
+            return
+        }
+
+        if let restoredBreak = BreakPersistenceHelper.restoreBreak() {
+            print("✅ Break session found, restoring break.")
+            breakTotalDuration = restoredBreak.total
+            breakSecondsRemaining = restoredBreak.remaining
+            startBreak()
+        } else if let restored = SessionPersistenceHelper.restoreSession() {
+            print("✅ Flow session found, restoring \(restored) seconds.")
+            elapsedSeconds = restored
+            startFlowTimer()
+        } else {
+            print("⚠️ No session found.")
+        }
+    }
+
+    func handleFlowPersistence(isFlowing: Bool) {
+        if isFlowing {
+            SessionPersistenceHelper.saveSession(elapsedSeconds: elapsedSeconds)
+        } else {
+            SessionPersistenceHelper.clearSession()
+        }
+    }
+
+    // MARK: - Utility
     private var minimumEligibleSeconds: Int {
         #if DEBUG
         return 5
@@ -97,12 +174,6 @@ class FlowEngine: ObservableObject {
         #endif
     }
 
-    // MARK: - Dummy Dependencies
-    let sessionManager = SessionManager()
-    let evolutionTracker = EvolutionTracker()
-    let petManager = PetManager()
-
-    // MARK: - Optional: Sound
     private func playBreakEndSound() {
         NSSound(named: "Glass")?.play()
     }
