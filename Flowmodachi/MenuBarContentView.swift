@@ -28,7 +28,12 @@ struct MenuBarContentView: View {
     @State private var showStats = false
     @AppStorage("debugMoodOverride") private var debugMoodOverride: String = "none"
     @AppStorage("debugMissedYesterday") private var debugMissedYesterday: Bool = false
-
+    
+    // MARK: - Persistence Keys
+        private let persistenceKey = "FlowSessionState"
+        private let maxResumeDelay: TimeInterval = 600 // 10 minutes
+        @AppStorage("resumeOnLaunch") private var resumeOnLaunch: Bool = true
+    
     // MARK: - View Body
     var body: some View {
         VStack(spacing: 16) {
@@ -143,6 +148,9 @@ struct MenuBarContentView: View {
             }
         }
         .padding()
+        .onAppear {
+            restoreSessionIfAvailable()
+        }
         .onChange(of: elapsedSeconds) {
             if elapsedSeconds >= minimumEligibleSeconds && !sessionCountedToday {
                 recordSessionIfEligible()
@@ -150,6 +158,39 @@ struct MenuBarContentView: View {
         }
         .frame(width: 280)
     }
+    
+    // MARK: - Persistence Helpers
+        private func saveSessionState() {
+            guard isFlowing else { return }
+            let state: [String: Double] = [
+                "timestamp": Date().timeIntervalSince1970,
+                "elapsed": Double(elapsedSeconds)
+            ]
+            UserDefaults.standard.set(state, forKey: persistenceKey)
+        }
+
+        private func restoreSessionIfAvailable() {
+            guard let saved = UserDefaults.standard.dictionary(forKey: persistenceKey) as? [String: Double],
+                  let timestamp = saved["timestamp"],
+                  let savedElapsed = saved["elapsed"],
+                  savedElapsed > 0 else {
+                return
+            }
+
+            let now = Date().timeIntervalSince1970
+            if now - timestamp <= maxResumeDelay {
+                elapsedSeconds = Int(savedElapsed)
+                startTimer()
+                print("✅ Resumed session after app launch")
+            } else {
+                print("⚠️ Saved session too old; not restoring")
+                clearSessionState()
+            }
+        }
+
+        private func clearSessionState() {
+            UserDefaults.standard.removeObject(forKey: persistenceKey)
+        }
 
     // MARK: - Time Format
     private var formattedTime: String {
@@ -164,6 +205,7 @@ struct MenuBarContentView: View {
         sessionCountedToday = false
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             elapsedSeconds += 1
+            saveSessionState()
         }
     }
 
@@ -272,4 +314,3 @@ struct MenuBarContentView: View {
         return sessionManager.calculateMood(debugMissedYesterday: didMissYesterday)
     }
 }
-
