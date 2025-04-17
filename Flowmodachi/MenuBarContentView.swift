@@ -121,11 +121,16 @@ struct MenuBarContentView: View {
         }
         .padding()
         .onAppear {
-            if resumeOnLaunch, let restored = SessionPersistenceHelper.restoreSession() {
-                elapsedSeconds = restored
-                startTimer()
+            if resumeOnLaunch {
+                DispatchQueue.main.async {
+                    if let restored = SessionPersistenceHelper.restoreSession() {
+                        elapsedSeconds = restored
+                        startTimer()
+                    }
+                }
             }
         }
+
         .onChange(of: elapsedSeconds) {
             if elapsedSeconds >= minimumEligibleSeconds && !sessionCountedToday {
                 recordSessionIfEligible()
@@ -133,7 +138,7 @@ struct MenuBarContentView: View {
         }
         .onChange(of: isFlowing) { _, newValue in
             if newValue {
-                SessionPersistenceHelper.save(elapsedSeconds: elapsedSeconds)
+                SessionPersistenceHelper.saveSession(elapsedSeconds: elapsedSeconds)
             } else {
                 SessionPersistenceHelper.clearSession()
             }
@@ -153,9 +158,10 @@ struct MenuBarContentView: View {
         sessionCountedToday = false
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             elapsedSeconds += 1
+            SessionPersistenceHelper.saveSession(elapsedSeconds: elapsedSeconds)
         }
     }
-
+    
     private func pauseTimer() {
         isFlowing = false
         timer?.invalidate()
