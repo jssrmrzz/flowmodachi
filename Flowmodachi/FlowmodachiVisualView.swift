@@ -46,7 +46,6 @@ struct FlowmodachiVisualView: View {
     @StateObject private var animationManager = FlowmodachiAnimationManager()
     @State private var showLightningBolts = false
 
-
     private let auraColors: [Color] = [
         .purple.opacity(0.3), .blue.opacity(0.3), .teal.opacity(0.3),
         .mint.opacity(0.3), .yellow.opacity(0.3), .pink.opacity(0.3)
@@ -57,6 +56,7 @@ struct FlowmodachiVisualView: View {
         VStack(spacing: 8) {
             ZStack {
                 backgroundRing
+                    .frame(width: 140, height: 140) // ✅ Ensure ring is same across stages
 
                 if characterImageExists {
                     CharacterImageView(
@@ -97,7 +97,6 @@ struct FlowmodachiVisualView: View {
                     showGlowFlash: $showGlowFlash,
                     isBursting: $isBursting,
                     showLightningBolts: $showLightningBolts
-
                 )
 
                 if isSleeping {
@@ -107,7 +106,7 @@ struct FlowmodachiVisualView: View {
                         .offset(y: 36)
                 }
             }
-            .frame(width: 70, height: 70)
+            .frame(width: 140, height: 140)
 
             if !isSleeping {
                 Text(moodLabel)
@@ -183,8 +182,14 @@ struct FlowmodachiVisualView: View {
         BackgroundRingView(
             isSleeping: isSleeping,
             isPulsing: isPulsing,
-            flowProgress: flowProgress
+            flowProgress: isSleeping ? breakProgress : 0
         )
+    }
+
+    private var breakProgress: Double {
+        guard breakTotalSeconds > 0 else { return 0 }
+        let completed = Double(breakTotalSeconds - breakSecondsRemaining)
+        return min(max(completed / Double(breakTotalSeconds), 0.0), 1.0)
     }
 
     private var formattedBreakTime: String {
@@ -242,7 +247,6 @@ struct FlowmodachiVisualView: View {
             }
         }
 
-
         withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
             isBursting = true
             showGlowFlash = true
@@ -255,4 +259,3 @@ struct FlowmodachiVisualView: View {
         }
     }
 }
-

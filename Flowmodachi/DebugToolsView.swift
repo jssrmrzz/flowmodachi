@@ -9,6 +9,7 @@ struct DebugToolsView: View {
     @AppStorage("debugMissedYesterday") private var debugMissedYesterday: Bool = false
     @AppStorage("debugDemoMode") private var debugDemoMode: Bool = false
     @AppStorage("debugEvolutionStage") private var debugEvolutionStage: Int = -1 // -1 = auto
+    @AppStorage("resumeOnLaunch") private var resumeOnLaunch: Bool = true
 
     var body: some View {
         #if DEBUG
@@ -79,7 +80,11 @@ struct DebugToolsView: View {
                         }
                     }
                 ))
+                
+                Toggle("Resume Flow After Quit (10 min window)", isOn: $resumeOnLaunch)
+                    .font(.caption2)
 
+                
                 Button("🧹 Reset Sessions") {
                     sessionManager.clearAllSessions()
                 }
