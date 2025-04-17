@@ -8,6 +8,7 @@ struct MenuBarContentView: View {
     @State private var isFlowing = false
     @State private var elapsedSeconds = 0
     @State private var timer: Timer?
+    @AppStorage("resumeOnLaunch") private var resumeOnLaunch: Bool = true
 
     // MARK: - Break Timer State
     @State private var isOnBreak = false
@@ -28,35 +29,22 @@ struct MenuBarContentView: View {
     @State private var showStats = false
     @AppStorage("debugMoodOverride") private var debugMoodOverride: String = "none"
     @AppStorage("debugMissedYesterday") private var debugMissedYesterday: Bool = false
-    
-    // MARK: - Persistence Keys
-        private let persistenceKey = "FlowSessionState"
-        private let maxResumeDelay: TimeInterval = 600 // 10 minutes
-        @AppStorage("resumeOnLaunch") private var resumeOnLaunch: Bool = true
-    
+
     // MARK: - View Body
     var body: some View {
         VStack(spacing: 16) {
-            // Title & Toggle Info
             HStack {
                 Text("Flowmodachi")
                     .font(.title2)
                     .fontWeight(.semibold)
-
                 Spacer()
-
-                Button(action: {
-                    withAnimation {
-                        showStats.toggle()
-                    }
-                }) {
+                Button(action: { withAnimation { showStats.toggle() } }) {
                     Image(systemName: "info.circle")
                         .foregroundColor(.gray)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
 
-            // Missed Yesterday Banner
             if didMissYesterday {
                 Text("Flowmodachi missed you yesterday 💤")
                     .font(.caption)
@@ -67,7 +55,6 @@ struct MenuBarContentView: View {
                     .transition(.opacity)
             }
 
-            // Stats Panel
             if showStats {
                 SessionStatsView(
                     currentStreak: sessionManager.currentStreak,
@@ -78,17 +65,14 @@ struct MenuBarContentView: View {
                 .padding(.bottom, 8)
             }
 
-            // Debug Tools
             DebugToolsView()
                 .environmentObject(sessionManager)
                 .padding(.top, 4)
 
-            // Optional Streak View
             if showStreaks {
                 StreakView(sessions: sessionManager.sessions)
             }
 
-            // Today + Longest
             VStack(spacing: 4) {
                 Text("🕒 Today: \(sessionManager.totalMinutesToday()) min")
                     .font(.caption)
@@ -98,7 +82,6 @@ struct MenuBarContentView: View {
                     .foregroundColor(.gray)
             }
 
-            // Creature UI
             FlowmodachiVisualView(
                 elapsedSeconds: elapsedSeconds,
                 isSleeping: isOnBreak,
@@ -108,104 +91,68 @@ struct MenuBarContentView: View {
             )
             .environmentObject(evolutionTracker)
 
-            // Timer & Controls
             if isOnBreak {
-                Button("End Break Early") {
-                    endBreak()
-                }
-                .buttonStyle(.borderedProminent)
+                Button("End Break Early") { endBreak() }
+                    .buttonStyle(.borderedProminent)
             } else {
                 Text(formattedTime)
                     .font(.system(.largeTitle, design: .monospaced))
                     .padding(.bottom, 4)
 
                 if isFlowing {
-                    Button("Pause") {
-                        pauseTimer()
-                    }
-                    .buttonStyle(.bordered)
+                    Button("Pause") { pauseTimer() }
+                        .buttonStyle(.bordered)
                 } else {
                     if elapsedSeconds > 0 && breakSecondsRemaining == 0 {
-                        Button("End Flow & Take Break") {
-                            suggestBreak()
-                        }
-                        .buttonStyle(.borderedProminent)
+                        Button("End Flow & Take Break") { suggestBreak() }
+                            .buttonStyle(.borderedProminent)
                     } else {
-                        Button(elapsedSeconds > 0 ? "Resume Flow" : "Start Flow") {
-                            startTimer()
-                        }
-                        .buttonStyle(.borderedProminent)
+                        Button(elapsedSeconds > 0 ? "Resume Flow" : "Start Flow") { startTimer() }
+                            .buttonStyle(.borderedProminent)
                     }
                 }
 
                 if elapsedSeconds > 0 && !isFlowing {
-                    Button("Reset Flow") {
-                        resetTimer()
-                    }
-                    .font(.caption)
-                    .foregroundColor(.red)
+                    Button("Reset Flow") { resetTimer() }
+                        .font(.caption)
+                        .foregroundColor(.red)
                 }
             }
         }
         .padding()
         .onAppear {
-            restoreSessionIfAvailable()
+            if resumeOnLaunch, let restored = SessionPersistenceHelper.restoreSession() {
+                elapsedSeconds = restored
+                startTimer()
+            }
         }
         .onChange(of: elapsedSeconds) {
             if elapsedSeconds >= minimumEligibleSeconds && !sessionCountedToday {
                 recordSessionIfEligible()
             }
         }
+        .onChange(of: isFlowing) { _, newValue in
+            if newValue {
+                SessionPersistenceHelper.save(elapsedSeconds: elapsedSeconds)
+            } else {
+                SessionPersistenceHelper.clearSession()
+            }
+        }
+
         .frame(width: 280)
     }
-    
-    // MARK: - Persistence Helpers
-        private func saveSessionState() {
-            guard isFlowing else { return }
-            let state: [String: Double] = [
-                "timestamp": Date().timeIntervalSince1970,
-                "elapsed": Double(elapsedSeconds)
-            ]
-            UserDefaults.standard.set(state, forKey: persistenceKey)
-        }
 
-        private func restoreSessionIfAvailable() {
-            guard let saved = UserDefaults.standard.dictionary(forKey: persistenceKey) as? [String: Double],
-                  let timestamp = saved["timestamp"],
-                  let savedElapsed = saved["elapsed"],
-                  savedElapsed > 0 else {
-                return
-            }
-
-            let now = Date().timeIntervalSince1970
-            if now - timestamp <= maxResumeDelay {
-                elapsedSeconds = Int(savedElapsed)
-                startTimer()
-                print("✅ Resumed session after app launch")
-            } else {
-                print("⚠️ Saved session too old; not restoring")
-                clearSessionState()
-            }
-        }
-
-        private func clearSessionState() {
-            UserDefaults.standard.removeObject(forKey: persistenceKey)
-        }
-
-    // MARK: - Time Format
     private var formattedTime: String {
         let minutes = elapsedSeconds / 60
         let seconds = elapsedSeconds % 60
         return String(format: "%02d:%02d", minutes, seconds)
     }
 
-    // MARK: - Timer Logic
     private func startTimer() {
         isFlowing = true
         sessionCountedToday = false
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             elapsedSeconds += 1
-            saveSessionState()
         }
     }
 
@@ -220,9 +167,9 @@ struct MenuBarContentView: View {
         pauseTimer()
         elapsedSeconds = 0
         sessionCountedToday = false
+        SessionPersistenceHelper.clearSession()
     }
 
-    // MARK: - Break Logic
     private func suggestBreak() {
         #if DEBUG
         let suggestedBreak = 0.25
@@ -255,7 +202,6 @@ struct MenuBarContentView: View {
         let breakTaken = breakTotalDuration - breakSecondsRemaining
         evolutionTracker.addBreakCredit(breakTaken)
 
-        // 🎉 Try evolving the pet!
         petManager.evolveIfEligible()
 
         isOnBreak = false
@@ -265,7 +211,6 @@ struct MenuBarContentView: View {
         recordSessionIfEligible()
     }
 
-    // MARK: - Record Session
     private func recordSessionIfEligible() {
         let today = Calendar.current.startOfDay(for: Date())
         let alreadyRecorded = sessionManager.sessions.contains {
@@ -287,12 +232,10 @@ struct MenuBarContentView: View {
         #endif
     }
 
-    // MARK: - Sound
     private func playBreakEndSound() {
         NSSound(named: "Glass")?.play()
     }
 
-    // MARK: - Mood Logic
     private var didMissYesterday: Bool {
         #if DEBUG
         if debugMissedYesterday {
