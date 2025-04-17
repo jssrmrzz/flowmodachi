@@ -121,16 +121,17 @@ struct MenuBarContentView: View {
         }
         .padding()
         .onAppear {
-            if resumeOnLaunch {
-                DispatchQueue.main.async {
-                    if let restored = SessionPersistenceHelper.restoreSession() {
-                        elapsedSeconds = restored
-                        startTimer()
-                    }
-                }
+            if resumeOnLaunch, let restored = SessionPersistenceHelper.restoreSession() {
+                elapsedSeconds = restored
+                startTimer()
+            }
+
+            if let restoredBreak = BreakPersistenceHelper.restoreBreak() {
+                breakTotalDuration = restoredBreak.total
+                breakSecondsRemaining = restoredBreak.remaining
+                startBreak(resume: true)
             }
         }
-
         .onChange(of: elapsedSeconds) {
             if elapsedSeconds >= minimumEligibleSeconds && !sessionCountedToday {
                 recordSessionIfEligible()
@@ -143,7 +144,13 @@ struct MenuBarContentView: View {
                 SessionPersistenceHelper.clearSession()
             }
         }
-
+        .onChange(of: isOnBreak) { _, newValue in
+            if newValue {
+                BreakPersistenceHelper.saveBreak(remaining: breakSecondsRemaining, total: breakTotalDuration)
+            } else {
+                BreakPersistenceHelper.clearBreak()
+            }
+        }
         .frame(width: 280)
     }
 
@@ -158,10 +165,9 @@ struct MenuBarContentView: View {
         sessionCountedToday = false
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             elapsedSeconds += 1
-            SessionPersistenceHelper.saveSession(elapsedSeconds: elapsedSeconds)
         }
     }
-    
+
     private func pauseTimer() {
         isFlowing = false
         timer?.invalidate()
@@ -189,17 +195,24 @@ struct MenuBarContentView: View {
         startBreak()
     }
 
-    private func startBreak() {
+    private func startBreak(resume: Bool = false) {
         isFlowing = false
         isOnBreak = true
+
         breakTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             breakSecondsRemaining -= 1
+            BreakPersistenceHelper.saveBreak(remaining: breakSecondsRemaining, total: breakTotalDuration)
+
             if breakSecondsRemaining <= 0 {
                 endBreak()
             }
         }
-        print("Break started for \(breakTotalDuration) seconds")
+
+        if !resume {
+            print("Break started for \(breakTotalDuration) seconds")
+        }
     }
+
 
     private func endBreak() {
         breakTimer?.invalidate()
@@ -215,6 +228,8 @@ struct MenuBarContentView: View {
         elapsedSeconds = 0
         playBreakEndSound()
         recordSessionIfEligible()
+        BreakPersistenceHelper.clearBreak()
+
     }
 
     private func recordSessionIfEligible() {
