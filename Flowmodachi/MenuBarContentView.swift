@@ -9,6 +9,7 @@ struct MenuBarContentView: View {
     @State private var elapsedSeconds = 0
     @State private var timer: Timer?
     @AppStorage("resumeOnLaunch") private var resumeOnLaunch: Bool = true
+    
 
     // MARK: - Break Timer State
     @State private var isOnBreak = false
@@ -165,6 +166,7 @@ struct MenuBarContentView: View {
         sessionCountedToday = false
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             elapsedSeconds += 1
+            SessionPersistenceHelper.saveSession(elapsedSeconds: elapsedSeconds)
         }
     }
 
