@@ -1,30 +1,53 @@
 import SwiftUI
 import AVFoundation
 
+// MARK: - Main View
+
 struct MenuBarContentView: View {
-    // MARK: - State & Environment
+    // MARK: - Flow Engine
     @EnvironmentObject var flowEngine: FlowEngine
+
+    // MARK: - External Environment
     @EnvironmentObject var petManager: PetManager
     @EnvironmentObject var sessionManager: SessionManager
     @EnvironmentObject var evolutionTracker: EvolutionTracker
 
-    // MARK: - UI State
+    // MARK: - UI Toggles
     @State private var showStats = false
     @AppStorage("showStreaks") private var showStreaks: Bool = true
     @AppStorage("debugMoodOverride") private var debugMoodOverride: String = "none"
     @AppStorage("debugMissedYesterday") private var debugMissedYesterday: Bool = false
     @AppStorage("resumeOnLaunch") private var resumeOnLaunch: Bool = true
 
+    // MARK: - View Body
     var body: some View {
         VStack(spacing: 16) {
             header
-            if didMissYesterday { missedBanner }
-            if showStats { statsPanel }
+
+            if didMissYesterday {
+                missedYesterdayBanner
+            }
+
+            if showStats {
+                SessionStatsView(
+                    currentStreak: sessionManager.currentStreak,
+                    totalSessions: sessionManager.sessions.count,
+                    longestStreak: sessionManager.longestStreak
+                )
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .padding(.bottom, 8)
+            }
+
             DebugToolsView()
                 .environmentObject(sessionManager)
                 .padding(.top, 4)
-            if showStreaks { StreakView(sessions: sessionManager.sessions) }
-            todaySummary
+
+            if showStreaks {
+                StreakView(sessions: sessionManager.sessions)
+            }
+
+            sessionMetrics
+
             FlowmodachiVisualView(
                 elapsedSeconds: flowEngine.elapsedSeconds,
                 isSleeping: flowEngine.isOnBreak,
@@ -33,14 +56,12 @@ struct MenuBarContentView: View {
                 mood: flowmodachiMood
             )
             .environmentObject(evolutionTracker)
-            timerControls
+
+            // Plug in session control logic
+            SessionControlsView()
+                .environmentObject(flowEngine)
         }
         .padding()
-        .onAppear {
-            if resumeOnLaunch {
-                flowEngine.restoreSessionIfAvailable()
-            }
-        }
         .onChange(of: flowEngine.elapsedSeconds) {
             flowEngine.recordSessionIfEligible()
         }
@@ -69,7 +90,7 @@ struct MenuBarContentView: View {
         }
     }
 
-    private var missedBanner: some View {
+    private var missedYesterdayBanner: some View {
         Text("Flowmodachi missed you yesterday 💤")
             .font(.caption)
             .foregroundColor(.orange)
@@ -79,17 +100,7 @@ struct MenuBarContentView: View {
             .transition(.opacity)
     }
 
-    private var statsPanel: some View {
-        SessionStatsView(
-            currentStreak: sessionManager.currentStreak,
-            totalSessions: sessionManager.sessions.count,
-            longestStreak: sessionManager.longestStreak
-        )
-        .transition(.opacity.combined(with: .move(edge: .top)))
-        .padding(.bottom, 8)
-    }
-
-    private var todaySummary: some View {
+    private var sessionMetrics: some View {
         VStack(spacing: 4) {
             Text("🕒 Today: \(sessionManager.totalMinutesToday()) min")
                 .font(.caption)
@@ -100,64 +111,18 @@ struct MenuBarContentView: View {
         }
     }
 
-    private var timerControls: some View {
-        Group {
-            if flowEngine.isOnBreak {
-                Button("End Break Early") {
-                    flowEngine.endBreak()
-                }
-                .buttonStyle(.borderedProminent)
-            } else {
-                Text(formattedTime)
-                    .font(.system(.largeTitle, design: .monospaced))
-                    .padding(.bottom, 4)
-
-                if flowEngine.isFlowing {
-                    Button("Pause") {
-                        flowEngine.pauseFlowTimer()
-                    }
-                    .buttonStyle(.bordered)
-                } else {
-                    if flowEngine.elapsedSeconds > 0 && flowEngine.breakSecondsRemaining == 0 {
-                        Button("End Flow & Take Break") {
-                            flowEngine.suggestBreak()
-                        }
-                        .buttonStyle(.borderedProminent)
-                    } else {
-                        Button(flowEngine.elapsedSeconds > 0 ? "Resume Flow" : "Start Flow") {
-                            flowEngine.startFlowTimer()
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                }
-
-                if flowEngine.elapsedSeconds > 0 && !flowEngine.isFlowing {
-                    Button("Reset Flow") {
-                        flowEngine.resetFlowTimer()
-                    }
-                    .font(.caption)
-                    .foregroundColor(.red)
-                }
-            }
-        }
-    }
-
-    // MARK: - Helpers
-
-    private var formattedTime: String {
-        let minutes = flowEngine.elapsedSeconds / 60
-        let seconds = flowEngine.elapsedSeconds % 60
-        return String(format: "%02d:%02d", minutes, seconds)
-    }
+    // MARK: - State Logic
 
     private var didMissYesterday: Bool {
         #if DEBUG
-        if debugMissedYesterday { return true }
+        if debugMissedYesterday {
+            return true
+        }
         #endif
         return sessionManager.missedYesterday()
     }
 
-    private var flowmodachiMood: CreatureMood {
+    var flowmodachiMood: CreatureMood {
         #if DEBUG
         switch debugMoodOverride {
         case "sleepy": return .sleepy
