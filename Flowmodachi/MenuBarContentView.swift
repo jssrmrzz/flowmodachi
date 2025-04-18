@@ -41,7 +41,9 @@ struct MenuBarContentView: View {
                 StreakView(sessions: sessionManager.sessions)
             }
 
-            sessionMetrics
+            SessionMetricsView()
+                .environmentObject(sessionManager)
+
 
             FlowmodachiVisualView(
                 elapsedSeconds: flowEngine.elapsedSeconds,
@@ -57,15 +59,7 @@ struct MenuBarContentView: View {
                 .environmentObject(flowEngine)
         }
         .padding()
-        .onChange(of: flowEngine.elapsedSeconds) {
-            flowEngine.recordSessionIfEligible()
-        }
-        .onChange(of: flowEngine.isFlowing) { _, newValue in
-            flowEngine.handleFlowPersistence(isFlowing: newValue)
-        }
-        .onChange(of: flowEngine.isOnBreak) { _, newValue in
-            flowEngine.handleBreakPersistence(isOnBreak: newValue)
-        }
+        .trackSessionLifecycleChanges(using: flowEngine)
         .frame(width: 280)
     }
 
@@ -95,17 +89,6 @@ struct MenuBarContentView: View {
             .transition(.opacity)
     }
 
-    private var sessionMetrics: some View {
-        VStack(spacing: 4) {
-            Text("🕒 Today: \(sessionManager.totalMinutesToday()) min")
-                .font(.caption)
-                .foregroundColor(.gray)
-            Text("🔥 Streak: \(sessionManager.longestStreak) day\(sessionManager.longestStreak == 1 ? "" : "s")")
-                .font(.caption)
-                .foregroundColor(.gray)
-        }
-    }
-
     // MARK: - State Logic
 
     private var didMissYesterday: Bool {
@@ -118,14 +101,6 @@ struct MenuBarContentView: View {
     }
 
     var flowmodachiMood: CreatureMood {
-        #if DEBUG
-        switch debugMoodOverride {
-        case "sleepy": return .sleepy
-        case "happy": return .happy
-        case "neutral": return .neutral
-        default: break
-        }
-        #endif
-        return sessionManager.calculateMood(debugMissedYesterday: didMissYesterday)
+        MoodCalculator.compute(from: sessionManager, debugOverride: debugMoodOverride, debugMissed: debugMissedYesterday)
     }
 }
