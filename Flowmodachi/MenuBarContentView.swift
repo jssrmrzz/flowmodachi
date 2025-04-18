@@ -29,14 +29,9 @@ struct MenuBarContentView: View {
             }
 
             if showStats {
-                SessionStatsView(
-                    currentStreak: sessionManager.currentStreak,
-                    totalSessions: sessionManager.sessions.count,
-                    longestStreak: sessionManager.longestStreak
-                )
-                .transition(.opacity.combined(with: .move(edge: .top)))
-                .padding(.bottom, 8)
+                SessionSummaryView()
             }
+
 
             DebugToolsView()
                 .environmentObject(sessionManager)
