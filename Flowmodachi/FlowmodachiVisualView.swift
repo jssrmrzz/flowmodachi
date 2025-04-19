@@ -1,12 +1,5 @@
 import SwiftUI
 
-// MARK: - Mood Enum
-enum CreatureMood {
-    case happy
-    case neutral
-    case sleepy
-}
-
 // MARK: - Sparkle Particle
 struct SparkleParticle: Identifiable {
     let id = UUID()
@@ -25,10 +18,9 @@ struct FlowmodachiVisualView: View {
 
     // MARK: - Inputs
     let elapsedSeconds: Int
-    let isSleeping: Bool
+    let isOnBreak: Bool
     let breakSecondsRemaining: Int
     let breakTotalSeconds: Int
-    let mood: CreatureMood
 
     // MARK: - Local State
     @State private var isPulsing = false
@@ -99,7 +91,7 @@ struct FlowmodachiVisualView: View {
                     showLightningBolts: $showLightningBolts
                 )
 
-                if isSleeping {
+                if isOnBreak {
                     Text(formattedBreakTime)
                         .font(.system(.caption, design: .monospaced))
                         .foregroundColor(.blue)
@@ -107,13 +99,6 @@ struct FlowmodachiVisualView: View {
                 }
             }
             .frame(width: 140, height: 140)
-
-            if !isSleeping {
-                Text(moodLabel)
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .transition(.opacity)
-            }
 
             #if DEBUG
             if debugOverrideStage >= 0 {
@@ -124,11 +109,11 @@ struct FlowmodachiVisualView: View {
             #endif
         }
         .onAppear {
-            isPulsing = isSleeping
+            isPulsing = isOnBreak
             animationManager.startAnimations(forStage: petManager.currentCharacter.stage)
             generateParticlesIfNeeded()
         }
-        .onChange(of: isSleeping) { _, newValue in
+        .onChange(of: isOnBreak) { _, newValue in
             isPulsing = newValue
         }
         .onChange(of: petManager.currentCharacter.id) { oldId, newId in
@@ -180,9 +165,9 @@ struct FlowmodachiVisualView: View {
 
     private var backgroundRing: some View {
         BackgroundRingView(
-            isSleeping: isSleeping,
+            isOnBreak: isOnBreak,
             isPulsing: isPulsing,
-            flowProgress: isSleeping ? breakProgress : 0
+            flowProgress: isOnBreak ? breakProgress : 0
         )
     }
 
@@ -201,14 +186,6 @@ struct FlowmodachiVisualView: View {
     private var flowProgress: Double {
         let totalTime: Double = 9.0
         return min(Double(elapsedSeconds) / totalTime, 1.0)
-    }
-
-    private var moodLabel: String {
-        switch mood {
-        case .happy: return "Feeling great!"
-        case .neutral: return "Steady focus"
-        case .sleepy: return "A bit sleepy 💤"
-        }
     }
 
     private func generateParticlesIfNeeded() {
