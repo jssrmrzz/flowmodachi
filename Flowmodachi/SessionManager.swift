@@ -52,23 +52,6 @@ class SessionManager: ObservableObject {
         return totalSeconds / 60
     }
 
-    /// Calculates mood based on streaks or debug override
-    func calculateMood(debugMissedYesterday: Bool) -> CreatureMood {
-        #if DEBUG
-        if debugMissedYesterday {
-            return .sleepy
-        }
-        #endif
-
-        if missedYesterday() {
-            return .sleepy
-        } else if currentStreak >= 7 {
-            return .happy
-        } else {
-            return .neutral
-        }
-    }
-
     /// Computed property for current streak of consecutive active days
     var currentStreak: Int {
         let calendar = Calendar.current

@@ -47,10 +47,9 @@ struct MenuBarContentView: View {
 
             FlowmodachiVisualView(
                 elapsedSeconds: flowEngine.elapsedSeconds,
-                isSleeping: flowEngine.isOnBreak,
+                isOnBreak: flowEngine.isOnBreak,
                 breakSecondsRemaining: flowEngine.breakSecondsRemaining,
-                breakTotalSeconds: flowEngine.breakTotalDuration,
-                mood: flowmodachiMood
+                breakTotalSeconds: flowEngine.breakTotalDuration
             )
             .environmentObject(evolutionTracker)
 
@@ -100,7 +99,4 @@ struct MenuBarContentView: View {
         return sessionManager.missedYesterday()
     }
 
-    var flowmodachiMood: CreatureMood {
-        MoodCalculator.compute(from: sessionManager, debugOverride: debugMoodOverride, debugMissed: debugMissedYesterday)
-    }
 }

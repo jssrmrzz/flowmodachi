@@ -1,13 +1,13 @@
 import SwiftUI
 
 struct BackgroundRingView: View {
-    let isSleeping: Bool
+    let isOnBreak: Bool
     let isPulsing: Bool
     let flowProgress: Double
 
     var body: some View {
         ZStack {
-            if isSleeping {
+            if isOnBreak {
                 // 🌫️ Soft pulsing glow
                 Circle()
                     .fill(Color.blue.opacity(0.2))

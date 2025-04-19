@@ -16,21 +16,6 @@ struct DebugToolsView: View {
         DisclosureGroup("🧪 Dev Tools") {
             VStack(alignment: .leading, spacing: 14) {
 
-                // MARK: - Mood Override
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Mood Override")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-
-                    Picker("Mood", selection: $debugMoodOverride) {
-                        Text("None").tag("none")
-                        Text("Sleepy").tag("sleepy")
-                        Text("Neutral").tag("neutral")
-                        Text("Happy").tag("happy")
-                    }
-                    .pickerStyle(.segmented)
-                }
-
                 // MARK: - Evolution Stage Override
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Evolution Stage Override")
