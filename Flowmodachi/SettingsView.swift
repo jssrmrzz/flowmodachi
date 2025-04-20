@@ -18,19 +18,19 @@ struct SettingsView: View {
             Toggle("Show Streaks", isOn: $showStreaks)
             Toggle("Enable Sounds", isOn: $playSounds)
             
-            // MARK: - Session Goal Picker
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Session Goal")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-
-                Picker("Session Goal", selection: $sessionGoal) {
-                    ForEach(sessionGoalOptions, id: \.self) { value in
-                        Text("\(value) min").tag(value)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
+//            // MARK: - Session Goal Picker
+//            VStack(alignment: .leading, spacing: 4) {
+//                Text("Session Goal")
+//                    .font(.caption2)
+//                    .foregroundColor(.secondary)
+//
+//                Picker("Session Goal", selection: $sessionGoal) {
+//                    ForEach(sessionGoalOptions, id: \.self) { value in
+//                        Text("\(value) min").tag(value)
+//                    }
+//                }
+//                .pickerStyle(.segmented)
+//            }
 
             // MARK: - Reset Button
             Divider()

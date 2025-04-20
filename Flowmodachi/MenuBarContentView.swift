@@ -18,48 +18,66 @@ struct MenuBarContentView: View {
     @AppStorage("debugMoodOverride") private var debugMoodOverride: String = "none"
     @AppStorage("debugMissedYesterday") private var debugMissedYesterday: Bool = false
     @AppStorage("resumeOnLaunch") private var resumeOnLaunch: Bool = true
+    @State private var showConfetti = false
 
     // MARK: - View Body
     var body: some View {
-        VStack(spacing: 16) {
-            header
+        ZStack {
+            VStack(spacing: 16) {
+                header
 
-            if didMissYesterday {
-                missedYesterdayBanner
+                if didMissYesterday {
+                    missedYesterdayBanner
+                }
+
+                if showStats {
+                    SessionSummaryView()
+                }
+
+                DebugToolsView()
+                    .environmentObject(sessionManager)
+                    .padding(.top, 4)
+
+                if showStreaks {
+                    StreakView(sessions: sessionManager.sessions)
+                }
+
+                SessionMetricsView()
+                    .environmentObject(sessionManager)
+
+                FlowmodachiVisualView(
+                    elapsedSeconds: flowEngine.elapsedSeconds,
+                    isOnBreak: flowEngine.isOnBreak,
+                    breakSecondsRemaining: flowEngine.breakSecondsRemaining,
+                    breakTotalSeconds: flowEngine.breakTotalDuration
+                )
+                .environmentObject(evolutionTracker)
+
+                SessionControlsView()
+                    .environmentObject(flowEngine)
+
+                RebirthButtonView(triggerConfetti: {
+                    withAnimation {
+                        showConfetti = true
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 4.5) {
+                        withAnimation {
+                            showConfetti = false
+                        }
+                    }
+                })
+                .environmentObject(petManager)
             }
+            .padding()
+            .trackSessionLifecycleChanges(using: flowEngine)
+            .frame(width: 280)
 
-            if showStats {
-                SessionSummaryView()
+            if showConfetti {
+                ConfettiView()
+                    .transition(.scale.combined(with: .opacity))
+                    .zIndex(10)
             }
-
-
-            DebugToolsView()
-                .environmentObject(sessionManager)
-                .padding(.top, 4)
-
-            if showStreaks {
-                StreakView(sessions: sessionManager.sessions)
-            }
-
-            SessionMetricsView()
-                .environmentObject(sessionManager)
-
-
-            FlowmodachiVisualView(
-                elapsedSeconds: flowEngine.elapsedSeconds,
-                isOnBreak: flowEngine.isOnBreak,
-                breakSecondsRemaining: flowEngine.breakSecondsRemaining,
-                breakTotalSeconds: flowEngine.breakTotalDuration
-            )
-            .environmentObject(evolutionTracker)
-
-            // Plug in session control logic
-            SessionControlsView()
-                .environmentObject(flowEngine)
         }
-        .padding()
-        .trackSessionLifecycleChanges(using: flowEngine)
-        .frame(width: 280)
     }
 
     // MARK: - Subviews
@@ -98,5 +116,4 @@ struct MenuBarContentView: View {
         #endif
         return sessionManager.missedYesterday()
     }
-
 }
