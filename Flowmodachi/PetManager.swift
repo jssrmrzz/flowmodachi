@@ -14,6 +14,7 @@ struct PetCharacter: Identifiable, Codable {
 
 class PetManager: ObservableObject {
     @Published var currentCharacter: PetCharacter
+    @Published var canRebirth = false
 
     private let storageKey = "currentCharacterID"
     private(set) var characterMap: [String: PetCharacter]
@@ -85,12 +86,19 @@ class PetManager: ObservableObject {
     // MARK: - Evolution Logic
 
     func evolveIfEligible() {
-        guard !currentCharacter.nextStageIds.isEmpty else { return }
+        guard !currentCharacter.nextStageIds.isEmpty else {
+            canRebirth = true // 🐣 evolution complete
+            return
+        }
 
         if let nextId = currentCharacter.nextStageIds.randomElement(),
            let nextCharacter = characterMap[nextId] {
             currentCharacter = nextCharacter
             UserDefaults.standard.set(nextId, forKey: storageKey)
+            
+            if nextCharacter.nextStageIds.isEmpty {
+                canRebirth = true // Reached final stage
+            }
 
             #if DEBUG
             if NSImage(named: nextCharacter.imageName) == nil {
@@ -100,6 +108,7 @@ class PetManager: ObservableObject {
         }
     }
 
+
     // MARK: - Debug Reset
 
     func resetToStart() {
@@ -108,6 +117,7 @@ class PetManager: ObservableObject {
            let starter = characterMap[randomEggId] {
             currentCharacter = starter
             UserDefaults.standard.set(starter.id, forKey: storageKey)
+            canRebirth = false
 
             #if DEBUG
             if NSImage(named: starter.imageName) == nil {

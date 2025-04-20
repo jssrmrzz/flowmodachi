@@ -9,9 +9,9 @@ struct SessionMetricsView: View {
                 .font(.caption)
                 .foregroundColor(.gray)
 
-            Text("🔥 Streak: \(sessionManager.longestStreak) day\(sessionManager.longestStreak == 1 ? "" : "s")")
-                .font(.caption)
-                .foregroundColor(.gray)
+//            Text("🔥 Streak: \(sessionManager.longestStreak) day\(sessionManager.longestStreak == 1 ? "" : "s")")
+//                .font(.caption)
+//                .foregroundColor(.gray)
         }
     }
 }
