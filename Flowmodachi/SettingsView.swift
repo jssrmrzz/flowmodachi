@@ -6,7 +6,8 @@ struct SettingsView: View {
     @AppStorage("showStreaks") private var showStreaks: Bool = true
     @AppStorage("playSounds") private var playSounds: Bool = true
     @AppStorage("sessionGoal") private var sessionGoal: Int = 25 // in minutes
-    
+    @AppStorage("hasSeenTutorial") private var hasSeenTutorial: Bool = true
+
     // MARK: - Constants
     private let sessionGoalOptions = [15, 25, 45, 60]
 
@@ -17,6 +18,12 @@ struct SettingsView: View {
             // MARK: - Toggles
             Toggle("Show Streaks", isOn: $showStreaks)
             Toggle("Enable Sounds", isOn: $playSounds)
+            
+            // MARK: - Reset Tutorial Button
+                        Button("Show Tutorial Again") {
+                            hasSeenTutorial = false
+                        }
+                        .font(.caption)
             
 //            // MARK: - Session Goal Picker
 //            VStack(alignment: .leading, spacing: 4) {

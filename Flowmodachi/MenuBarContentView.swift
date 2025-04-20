@@ -18,6 +18,7 @@ struct MenuBarContentView: View {
     @AppStorage("debugMoodOverride") private var debugMoodOverride: String = "none"
     @AppStorage("debugMissedYesterday") private var debugMissedYesterday: Bool = false
     @AppStorage("resumeOnLaunch") private var resumeOnLaunch: Bool = true
+    @AppStorage("hasSeenTutorial") private var hasSeenTutorial: Bool = false
     @State private var showConfetti = false
 
     // MARK: - View Body
@@ -25,6 +26,35 @@ struct MenuBarContentView: View {
         ZStack {
             VStack(spacing: 16) {
                 header
+                
+                // MARK: Tutorial Banner
+                if !hasSeenTutorial {
+                    VStack(spacing: 6) {
+                        Text("👋 Welcome to Flowmodachi!")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .multilineTextAlignment(.center)
+
+                        Text("Start a focus session to help your egg evolve. Take breaks to grow your Flowmodachi!")
+                            .font(.caption2)
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true) 
+
+                        Button("Got it!") {
+                            withAnimation {
+                                hasSeenTutorial = true
+                            }
+                        }
+                        .font(.caption2)
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .padding(10)
+                    .background(Color.accentColor.opacity(0.1))
+                    .cornerRadius(10)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
+
 
                 if didMissYesterday {
                     missedYesterdayBanner
