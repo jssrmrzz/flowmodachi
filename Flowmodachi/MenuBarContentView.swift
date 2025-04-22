@@ -35,7 +35,7 @@ struct MenuBarContentView: View {
                             .fontWeight(.semibold)
                             .multilineTextAlignment(.center)
 
-                        Text("Start a focus session to help your egg evolve. Take breaks to grow your Flowmodachi!")
+                        Text("Start a focus session to help your egg evolve. Take breaks to grow your Flowmodachi! Send Feedback by Right Clicking menu bar icon and selecting Settings")
                             .font(.caption2)
                             .multilineTextAlignment(.center)
                             .foregroundColor(.secondary)
