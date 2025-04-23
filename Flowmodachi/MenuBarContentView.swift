@@ -20,41 +20,18 @@ struct MenuBarContentView: View {
     @AppStorage("resumeOnLaunch") private var resumeOnLaunch: Bool = true
     @AppStorage("hasSeenTutorial") private var hasSeenTutorial: Bool = false
     @State private var showConfetti = false
+    @State private var hasStartedSession = false
 
     // MARK: - View Body
     var body: some View {
         ZStack {
             VStack(spacing: 16) {
                 header
-                
+
                 // MARK: Tutorial Banner
                 if !hasSeenTutorial {
-                    VStack(spacing: 6) {
-                        Text("👋 Welcome to Flowmodachi!")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .multilineTextAlignment(.center)
-
-                        Text("Start a focus session to help your egg evolve. Take breaks to grow your Flowmodachi! Send Feedback by Right Clicking menu bar icon and selecting Settings")
-                            .font(.caption2)
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(.secondary)
-                            .fixedSize(horizontal: false, vertical: true) 
-
-                        Button("Got it!") {
-                            withAnimation {
-                                hasSeenTutorial = true
-                            }
-                        }
-                        .font(.caption2)
-                        .buttonStyle(.borderedProminent)
-                    }
-                    .padding(10)
-                    .background(Color.accentColor.opacity(0.1))
-                    .cornerRadius(10)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                    tutorialBanner
                 }
-
 
                 if didMissYesterday {
                     missedYesterdayBanner
@@ -100,6 +77,12 @@ struct MenuBarContentView: View {
             }
             .padding()
             .trackSessionLifecycleChanges(using: flowEngine)
+            .onChange(of: flowEngine.elapsedSeconds) {
+                if flowEngine.elapsedSeconds == 1 {
+                    hasStartedSession = true
+                }
+            }
+
             .frame(width: 280)
 
             if showConfetti {
@@ -136,14 +119,39 @@ struct MenuBarContentView: View {
             .transition(.opacity)
     }
 
+    private var tutorialBanner: some View {
+        VStack(spacing: 6) {
+            Text("👋 Welcome to Flowmodachi!")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .multilineTextAlignment(.center)
+
+            Text("Start a focus session to help your egg evolve. Take breaks to grow your Flowmodachi! Send Feedback by Right Clicking the menu bar icon and selecting Settings.")
+                .font(.caption2)
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button("Got it!") {
+                withAnimation {
+                    hasSeenTutorial = true
+                }
+            }
+            .font(.caption2)
+            .buttonStyle(.borderedProminent)
+        }
+        .padding(10)
+        .background(Color.accentColor.opacity(0.1))
+        .cornerRadius(10)
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
     // MARK: - State Logic
 
     private var didMissYesterday: Bool {
         #if DEBUG
-        if debugMissedYesterday {
-            return true
-        }
+        if debugMissedYesterday { return true }
         #endif
-        return sessionManager.missedYesterday()
+        return !hasStartedSession && sessionManager.missedYesterday()
     }
 }
