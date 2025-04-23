@@ -91,12 +91,12 @@ struct FlowmodachiVisualView: View {
                     showLightningBolts: $showLightningBolts
                 )
 
-                if isOnBreak {
-                    Text(formattedBreakTime)
-                        .font(.system(.caption, design: .monospaced))
-                        .foregroundColor(.blue)
-                        .offset(y: 36)
-                }
+//                if isOnBreak {
+//                    Text(formattedBreakTime)
+//                        .font(.system(.caption, design: .monospaced))
+//                        .foregroundColor(.blue)
+//                        .offset(y: 36)
+//                }
             }
             .frame(width: 140, height: 140)
 
@@ -177,11 +177,11 @@ struct FlowmodachiVisualView: View {
         return min(max(completed / Double(breakTotalSeconds), 0.0), 1.0)
     }
 
-    private var formattedBreakTime: String {
-        let minutes = breakSecondsRemaining / 60
-        let seconds = breakSecondsRemaining % 60
-        return String(format: "%02d:%02d", minutes, seconds)
-    }
+//    private var formattedBreakTime: String {
+//        let minutes = breakSecondsRemaining / 60
+//        let seconds = breakSecondsRemaining % 60
+//        return String(format: "%02d:%02d", minutes, seconds)
+//    }
 
     private var flowProgress: Double {
         let totalTime: Double = 9.0

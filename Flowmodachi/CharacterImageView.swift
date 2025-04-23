@@ -103,11 +103,11 @@ struct CharacterImageView: View {
     // MARK: - Computed View Properties
     private var characterSize: CGFloat {
         switch stage {
-        case 0: return 40
-        case 1: return 60
-        case 2: return 75
-        case 3: return 85
-        default: return 36
+        case 0: return 60
+        case 1: return 90
+        case 2: return 100
+        case 3: return 125
+        default: return 70
         }
     }
 
