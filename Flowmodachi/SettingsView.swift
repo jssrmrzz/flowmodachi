@@ -103,9 +103,31 @@ struct SettingsView: View {
     
     // MARK: - Feedback Logic
     private func sendFeedbackEmail(fallbackHandler: @escaping () -> Void) {
-        let email = "your.email@example.com"
+        let email = "888.wav.888@gmail.com"
         let subject = "Flowmodachi Feedback"
-        let body = "Hi there,\n\nI'd like to share the following feedback:\n"
+        let body = """
+        Hi there,
+
+        Thanks so much for giving Flowmodachi a try! I’d love to hear your thoughts to help shape where this app goes next.
+
+        If you're up for it, here are a few questions to guide your feedback (feel free to answer as many or as few as you'd like):
+
+        
+        • Was it easy to figure out how to start a focus session?
+
+        • What worked or felt confusing?
+
+        • What would make this app more useful or fun for you?
+        
+        • Bug reports or anything broken?
+        
+        • Any other thoughts, feedback, or random ideas?
+
+        Thanks again for trying out Flowmodachi! 🌱
+
+        – Jess
+        """
+
 
         let formattedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let formattedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
