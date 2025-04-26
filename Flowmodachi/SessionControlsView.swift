@@ -4,6 +4,9 @@ import SwiftUI
 
 struct SessionControlsView: View {
     @EnvironmentObject var flowEngine: FlowEngine
+    @EnvironmentObject var petManager: PetManager // ✅ Inject PetManager
+
+    @State private var showResetConfirmation = false // ✅ New state for alert
 
     // MARK: - View Body
 
@@ -24,10 +27,20 @@ struct SessionControlsView: View {
                 // Show reset option only when paused with progress
                 if flowEngine.elapsedSeconds > 0 && !flowEngine.isFlowing {
                     Button("Reset Flow") {
-                        flowEngine.resetFlowTimer()
+                        showResetConfirmation = true // ✅ Trigger confirmation alert
                     }
                     .font(.caption)
                     .foregroundColor(.red)
+                    .alert("Reset Flow?", isPresented: $showResetConfirmation) {
+                        Button("Reset", role: .destructive) {
+                            flowEngine.resetFlowTimer()
+                            petManager.resetToStart()
+                        }
+                        Button("Cancel", role: .cancel) { }
+                    } message: {
+                        Text("Are you sure you want to reset your current flow session and your Flowmodachi? You'll start with a new random egg.")
+                    }
+
                 }
             }
         }

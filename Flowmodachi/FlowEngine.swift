@@ -1,4 +1,3 @@
-// FlowEngine.swift
 import Foundation
 import Combine
 import SwiftUI
@@ -21,6 +20,9 @@ class FlowEngine: ObservableObject {
     private var timer: Timer?
     private var breakTimer: Timer?
     private var sessionCountedToday = false
+
+    // MARK: - Testing Mode
+    private let isTestingMode = true // Set to true for MVP tester build
 
     // MARK: - Init
     init(sessionManager: SessionManager, evolutionTracker: EvolutionTracker, petManager: PetManager) {
@@ -58,14 +60,16 @@ class FlowEngine: ObservableObject {
 
     // MARK: - Break Logic
     func suggestBreak() {
-        #if DEBUG
-        let suggestedBreak = 0.25
-        #else
-        let minutes = elapsedSeconds / 60
-        let suggestedBreak = minutes >= 120 ? 30 : min(max(Int(Double(minutes) * 0.2), 5), 20)
-        #endif
+        let suggestedBreakMinutes: Double
 
-        breakTotalDuration = Int(suggestedBreak * 60)
+        if isTestingMode {
+            suggestedBreakMinutes = 1.0 // 1-minute break during testing
+        } else {
+            let minutes = Double(elapsedSeconds) / 60.0
+            suggestedBreakMinutes = minutes >= 120.0 ? 30.0 : min(max(minutes * 0.2, 5.0), 20.0)
+        }
+
+        breakTotalDuration = Int(suggestedBreakMinutes * 60)
         breakSecondsRemaining = breakTotalDuration
         startBreak()
     }
@@ -94,10 +98,9 @@ class FlowEngine: ObservableObject {
 
     func endBreak() {
         print("✅ Break ended cleanly.")
-        // 🛑 Prevent double execution
         guard isOnBreak else { return }
 
-        isOnBreak = false // ✅ Immediately mark break as over to avoid re-entry
+        isOnBreak = false
         breakTimer?.invalidate()
         breakTimer = nil
 
@@ -111,7 +114,6 @@ class FlowEngine: ObservableObject {
         playBreakEndSound()
         recordSessionIfEligible()
     }
-
 
     func handleBreakPersistence(isOnBreak: Bool) {
         if isOnBreak {
@@ -167,11 +169,11 @@ class FlowEngine: ObservableObject {
 
     // MARK: - Utility
     private var minimumEligibleSeconds: Int {
-        #if DEBUG
-        return 5
-        #else
-        return 60 * 5
-        #endif
+        if isTestingMode {
+            return 5 // 5 seconds needed to count session during testing
+        } else {
+            return 60 * 5 // 5 minutes minimum normally
+        }
     }
 
     private func playBreakEndSound() {
