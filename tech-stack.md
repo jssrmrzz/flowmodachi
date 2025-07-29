@@ -46,7 +46,7 @@
 ### State Management
 - **@ObservableObject**: Core business logic classes (FlowEngine, SessionManager, PetManager)
 - **@Published**: Reactive state properties
-- **@AppStorage**: UserDefaults-backed settings
+- **@AppStorage**: UserDefaults-backed settings with extensive configuration options
 - **@State/@Binding**: Local component state
 
 ### Data Flow
@@ -99,15 +99,27 @@ User Input → View → ObservableObject → Business Logic → UserDefaults
 - **Code Signing**: Automatic development signing
 - **Entitlements**: App sandbox and capabilities
 
+### Runtime Configuration
+- **isTestingMode**: User-togglable testing mode with reduced timers
+- **playSounds**: Audio notification preference
+- **breakMultiplier**: Configurable break duration calculation (10-30%)
+- **minBreakMinutes**: Minimum break duration (2-15 minutes)
+- **maxBreakMinutes**: Maximum break duration (15-30 minutes)
+- **resumeOnLaunch**: Session restoration preference
+- **sessionGoal**: Target session duration (15/25/45/60 minutes)
+
 ### Feature Flags
-- **Testing Mode**: Reduced timers for development (hardcoded)
+- **Testing Mode**: User-configurable reduced timers via @AppStorage
 - **Debug Demo Mode**: Sample data generation (UserDefaults)
 - **Debug Logging**: Conditional compilation directives
 
 ### User Preferences
-- **AppStorage Backed**: SwiftUI property wrappers for settings
+- **AppStorage Backed**: SwiftUI property wrappers for comprehensive settings
 - **Persistent Settings**: Automatic UserDefaults synchronization
 - **Default Values**: Fallback configuration values
+- **Break Configuration**: Customizable multiplier, minimum, and maximum break durations
+- **Session Settings**: Goal configuration and resume-on-launch preferences
+- **Audio Preferences**: Configurable sound notifications
 
 ## Performance Considerations
 

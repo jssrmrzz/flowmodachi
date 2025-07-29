@@ -43,7 +43,7 @@ Flowmodachi combines productivity with playful gamification through a virtual pe
 1. **Header** - App title and info button
 2. **Tutorial/Status Banners** - Contextual information
 3. **Statistics** - Optional session data display
-4. **Debug Tools** - Development-only controls
+4. **Advanced Settings** - Break duration and testing mode controls
 5. **Streak Information** - User engagement metrics
 6. **Session Metrics** - Current session data
 7. **Pet Visual** - Central character display
@@ -59,9 +59,10 @@ Flowmodachi combines productivity with playful gamification through a virtual pe
 - **Icon Buttons**: Minimalist approach with SF Symbols
 
 ### Controls
-- **Toggles**: Standard SwiftUI toggle switches
-- **Pickers**: Segmented control style for options
+- **Toggles**: Standard SwiftUI toggle switches for binary options
+- **Pickers**: Segmented control style for session goals and break parameters
 - **Progress Indicators**: Custom ring-based progress visualization
+- **Multi-Level Pickers**: Hierarchical options for break duration settings
 
 ### Feedback Systems
 - **Visual**: Color changes, scale animations, opacity transitions
@@ -123,10 +124,12 @@ Flowmodachi combines productivity with playful gamification through a virtual pe
 5. **Evolution Rewards**: Celebration when pets evolve
 
 ### Settings & Configuration
-- **Minimal Options**: Only essential customization exposed
+- **Comprehensive Options**: Essential customization plus advanced break configuration
 - **Smart Defaults**: Sensible settings that work for most users
 - **Feedback Integration**: Easy access to developer communication
 - **Reset Options**: Clear path to restore defaults
+- **Testing Mode**: Developer-friendly option for reduced timers
+- **Break Customization**: Fine-grained control over break duration calculation
 
 ## Accessibility
 
@@ -206,6 +209,8 @@ Flowmodachi combines productivity with playful gamification through a virtual pe
 - **Metric Cards**: Statistics and information display
 - **Action Buttons**: Standardized interaction elements
 - **Status Banners**: Contextual information presentation
+- **Settings Groups**: Organized configuration sections with clear hierarchy
+- **Parameter Selectors**: Consistent picker styling for numerical options
 
 ### Style Guidelines
 - **Spacing**: 4pt grid system for consistent alignment

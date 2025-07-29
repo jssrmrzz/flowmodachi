@@ -16,10 +16,11 @@ Flowmodachi is a macOS menubar productivity application that combines focus sess
 
 #### F2: Break Management
 - **F2.1**: Suggest break duration based on session length
-- **F2.2**: Dynamic break calculation (20% of session time, 5-20 min range, 30 min for 2+ hour sessions)
+- **F2.2**: Configurable break calculation (default: 20% of session time, 5-20 min range, 30 min for 2+ hour sessions)
 - **F2.3**: Break countdown timer with visual feedback
 - **F2.4**: Break credit system for pet evolution
-- **F2.5**: Audio notification when break ends
+- **F2.5**: Audio notification when break ends (user configurable)
+- **F2.6**: Customizable break duration parameters (multiplier, min/max limits)
 
 #### F3: Pet Evolution System
 - **F3.1**: Multi-stage character evolution (Egg → Form 1 → Form 2 → Form 3)
@@ -42,6 +43,9 @@ Flowmodachi is a macOS menubar productivity application that combines focus sess
 - **F5.4**: Tutorial reset functionality
 - **F5.5**: App reset to defaults
 - **F5.6**: Feedback submission system
+- **F5.7**: Testing mode toggle (enables reduced timers for development/testing)
+- **F5.8**: Resume session on launch preference
+- **F5.9**: Break duration customization (multiplier: 10-30%, min: 2-15 min, max: 15-30 min)
 
 ### User Interface Requirements
 
@@ -120,8 +124,11 @@ The current MVP includes:
 - ✅ Pet evolution system with multiple forms
 - ✅ Menu bar integration
 - ✅ Session persistence
-- ✅ Basic settings panel
-- ✅ Testing mode for validation
+- ✅ Comprehensive settings panel with advanced configuration
+- ✅ User-configurable testing mode
+- ✅ Customizable break duration calculation
+- ✅ Session goal picker interface
+- ✅ Resume on launch preference
 
 ## Future Enhancement Considerations
 
