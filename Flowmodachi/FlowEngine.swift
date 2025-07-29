@@ -21,8 +21,12 @@ class FlowEngine: ObservableObject {
     private var breakTimer: Timer?
     private var sessionCountedToday = false
 
-    // MARK: - Testing Mode
-    private let isTestingMode = true // Set to true for MVP tester build
+    // MARK: - Settings
+    @AppStorage("isTestingMode") private var isTestingMode: Bool = false
+    @AppStorage("playSounds") private var playSounds: Bool = true
+    @AppStorage("breakMultiplier") private var breakMultiplier: Double = 0.2
+    @AppStorage("minBreakMinutes") private var minBreakMinutes: Int = 5
+    @AppStorage("maxBreakMinutes") private var maxBreakMinutes: Int = 20
 
     // MARK: - Init
     init(sessionManager: SessionManager, evolutionTracker: EvolutionTracker, petManager: PetManager) {
@@ -66,7 +70,16 @@ class FlowEngine: ObservableObject {
             suggestedBreakMinutes = 1.0 // 1-minute break during testing
         } else {
             let minutes = Double(elapsedSeconds) / 60.0
-            suggestedBreakMinutes = minutes >= 120.0 ? 30.0 : min(max(minutes * 0.2, 5.0), 20.0)
+            let calculatedBreak = minutes * breakMultiplier
+            let minBreak = Double(minBreakMinutes)
+            let maxBreak = Double(maxBreakMinutes)
+            
+            // For sessions over 2 hours, use a longer break (30 min max)
+            if minutes >= 120.0 {
+                suggestedBreakMinutes = min(30.0, maxBreak)
+            } else {
+                suggestedBreakMinutes = min(max(calculatedBreak, minBreak), maxBreak)
+            }
         }
 
         breakTotalDuration = Int(suggestedBreakMinutes * 60)
@@ -177,6 +190,7 @@ class FlowEngine: ObservableObject {
     }
 
     private func playBreakEndSound() {
+        guard playSounds else { return }
         NSSound(named: "Glass")?.play()
     }
 }

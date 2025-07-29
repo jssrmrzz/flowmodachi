@@ -1,0 +1,133 @@
+# Requirements Specification
+
+## Project Overview
+Flowmodachi is a macOS menubar productivity application that combines focus session tracking with a virtual pet evolution system to encourage healthy work habits and break-taking.
+
+## Functional Requirements
+
+### Core Features
+
+#### F1: Flow Session Management
+- **F1.1**: Start, pause, and reset focus session timers
+- **F1.2**: Track elapsed time during active sessions
+- **F1.3**: Persist session state across app restarts (configurable)
+- **F1.4**: Minimum session threshold (5 minutes production, 5 seconds testing)
+- **F1.5**: Record completed sessions to persistent storage
+
+#### F2: Break Management
+- **F2.1**: Suggest break duration based on session length
+- **F2.2**: Dynamic break calculation (20% of session time, 5-20 min range, 30 min for 2+ hour sessions)
+- **F2.3**: Break countdown timer with visual feedback
+- **F2.4**: Break credit system for pet evolution
+- **F2.5**: Audio notification when break ends
+
+#### F3: Pet Evolution System
+- **F3.1**: Multi-stage character evolution (Egg → Form 1 → Form 2 → Form 3)
+- **F3.2**: Evolution triggered by break completion
+- **F3.3**: Dynamic character loading based on available assets
+- **F3.4**: Rebirth system after reaching final evolution stage
+- **F3.5**: Visual feedback during evolution transitions
+
+#### F4: Session Analytics
+- **F4.1**: Daily session tracking and statistics
+- **F4.2**: Current streak calculation (consecutive active days)
+- **F4.3**: Longest streak tracking
+- **F4.4**: Total daily minutes calculation
+- **F4.5**: Session history persistence
+
+#### F5: Settings and Configuration
+- **F5.1**: Toggle streak display visibility
+- **F5.2**: Enable/disable sound notifications
+- **F5.3**: Session goal configuration (15, 25, 45, 60 minutes)
+- **F5.4**: Tutorial reset functionality
+- **F5.5**: App reset to defaults
+- **F5.6**: Feedback submission system
+
+### User Interface Requirements
+
+#### UI1: Menu Bar Integration
+- **UI1.1**: Native macOS menu bar presence
+- **UI1.2**: Menu bar icon with status indication
+- **UI1.3**: Dropdown interface from menu bar
+- **UI1.4**: No main application window (menu bar only)
+
+#### UI2: Visual Design
+- **UI2.1**: Consistent SwiftUI-based interface
+- **UI2.2**: Character visualization with smooth animations
+- **UI2.3**: Progress indicators for sessions and breaks
+- **UI2.4**: Visual evolution effects and transitions
+- **UI2.5**: Settings panel with standard macOS controls
+
+## Non-Functional Requirements
+
+### Performance
+- **P1**: Session timer accuracy within 1 second
+- **P2**: UI responsiveness during state transitions
+- **P3**: Minimal memory footprint for menu bar app
+- **P4**: Fast app launch and session restoration
+
+### Reliability
+- **R1**: Session data persistence across app crashes
+- **R2**: Graceful handling of missing character assets
+- **R3**: Robust UserDefaults data management
+- **R4**: Error handling for timer and persistence operations
+
+### Compatibility
+- **C1**: macOS 14.0+ primary support
+- **C2**: Multi-platform capability (iOS 18.4+, visionOS 2.4+)
+- **C3**: Xcode 16.3+ build requirement
+- **C4**: Swift 5.0 language compatibility
+
+### Security and Privacy
+- **S1**: Local data storage only (no network communication)
+- **S2**: User consent for email feedback functionality
+- **S3**: No sensitive data collection or transmission
+
+## Testing Requirements
+
+### Test Coverage
+- **T1**: Unit tests for core business logic (FlowEngine, SessionManager)
+- **T2**: UI automation tests for menu bar interactions
+- **T3**: Testing mode for accelerated validation
+- **T4**: Debug demo mode for development testing
+
+### Test Scenarios
+- **T5**: Session persistence across app restarts
+- **T6**: Break calculation accuracy
+- **T7**: Pet evolution state management
+- **T8**: Settings persistence and restoration
+- **T9**: Error handling for edge cases
+
+## Development Requirements
+
+### Build System
+- **D1**: Xcode project configuration with proper targets
+- **D2**: Asset catalog management for character images
+- **D3**: Code signing and entitlements configuration
+- **D4**: Multi-platform build support
+
+### Code Quality
+- **D5**: Swift best practices and conventions
+- **D6**: SwiftUI declarative UI patterns
+- **D7**: Combine framework for reactive programming
+- **D8**: Proper separation of concerns (MVVM-like architecture)
+
+## MVP Scope (Current Implementation)
+
+The current MVP includes:
+- ✅ Basic flow session tracking
+- ✅ Break suggestion and management
+- ✅ Pet evolution system with multiple forms
+- ✅ Menu bar integration
+- ✅ Session persistence
+- ✅ Basic settings panel
+- ✅ Testing mode for validation
+
+## Future Enhancement Considerations
+
+- Goal setting and progress tracking
+- Advanced analytics and reporting
+- Cloud synchronization
+- Additional pet types and evolution paths
+- Integration with external productivity tools
+- Custom break reminder notifications

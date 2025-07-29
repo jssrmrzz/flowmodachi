@@ -27,6 +27,11 @@
 		2F2FCBC52DA7057B003C3733 /* Flowmodachi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Flowmodachi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2F2FCBD32DA7057C003C3733 /* FlowmodachiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FlowmodachiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2F2FCBDD2DA7057C003C3733 /* FlowmodachiUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FlowmodachiUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2F2FCBF02DA7057D003C3733 /* CLAUDE.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
+		2F2FCBF12DA7057D003C3733 /* requirements.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = requirements.md; sourceTree = "<group>"; };
+		2F2FCBF22DA7057D003C3733 /* todo.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = todo.md; sourceTree = "<group>"; };
+		2F2FCBF32DA7057D003C3733 /* tech-stack.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = tech-stack.md; sourceTree = "<group>"; };
+		2F2FCBF42DA7057D003C3733 /* design.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = design.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +80,7 @@
 		2F2FCBBC2DA7057B003C3733 = {
 			isa = PBXGroup;
 			children = (
+				2F2FCBF52DA7057D003C3733 /* Documentation */,
 				2F2FCBC72DA7057B003C3733 /* Flowmodachi */,
 				2F2FCBD62DA7057C003C3733 /* FlowmodachiTests */,
 				2F2FCBE02DA7057C003C3733 /* FlowmodachiUITests */,
@@ -90,6 +96,18 @@
 				2F2FCBDD2DA7057C003C3733 /* FlowmodachiUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		2F2FCBF52DA7057D003C3733 /* Documentation */ = {
+			isa = PBXGroup;
+			children = (
+				2F2FCBF02DA7057D003C3733 /* CLAUDE.md */,
+				2F2FCBF12DA7057D003C3733 /* requirements.md */,
+				2F2FCBF22DA7057D003C3733 /* todo.md */,
+				2F2FCBF32DA7057D003C3733 /* tech-stack.md */,
+				2F2FCBF42DA7057D003C3733 /* design.md */,
+			);
+			name = Documentation;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -406,7 +424,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 15.3;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jssrmrzz.Flowmodachi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -443,7 +461,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 15.3;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jssrmrzz.Flowmodachi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -465,7 +483,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
-				MACOSX_DEPLOYMENT_TARGET = 15.3;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jssrmrzz.FlowmodachiTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -487,7 +505,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
-				MACOSX_DEPLOYMENT_TARGET = 15.3;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jssrmrzz.FlowmodachiTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -508,7 +526,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
-				MACOSX_DEPLOYMENT_TARGET = 15.3;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jssrmrzz.FlowmodachiUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -529,7 +547,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
-				MACOSX_DEPLOYMENT_TARGET = 15.3;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jssrmrzz.FlowmodachiUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
