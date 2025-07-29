@@ -7,6 +7,11 @@ struct SettingsView: View {
     @AppStorage("playSounds") private var playSounds: Bool = true
     @AppStorage("sessionGoal") private var sessionGoal: Int = 25 // in minutes
     @AppStorage("hasSeenTutorial") private var hasSeenTutorial: Bool = true
+    @AppStorage("isTestingMode") private var isTestingMode: Bool = false
+    @AppStorage("resumeOnLaunch") private var resumeOnLaunch: Bool = true
+    @AppStorage("breakMultiplier") private var breakMultiplier: Double = 0.2
+    @AppStorage("minBreakMinutes") private var minBreakMinutes: Int = 5
+    @AppStorage("maxBreakMinutes") private var maxBreakMinutes: Int = 20
     
     @State private var showEmailFallback = false
     @State private var copied = false
@@ -15,6 +20,9 @@ struct SettingsView: View {
 
     // MARK: - Constants
     private let sessionGoalOptions = [15, 25, 45, 60]
+    private let breakMultiplierOptions = [0.1, 0.15, 0.2, 0.25, 0.3]
+    private let minBreakOptions = [2, 5, 10, 15]
+    private let maxBreakOptions = [15, 20, 25, 30]
 
     // MARK: - View
     var body: some View {
@@ -23,6 +31,8 @@ struct SettingsView: View {
             // MARK: - Toggles
             Toggle("Show Streaks", isOn: $showStreaks)
             Toggle("Enable Sounds", isOn: $playSounds)
+            Toggle("Resume Session on Launch", isOn: $resumeOnLaunch)
+            Toggle("Testing Mode (Short Timers)", isOn: $isTestingMode)
             
             // MARK: - Reset Tutorial Button
                         Button("Show Tutorial Again") {
@@ -66,19 +76,61 @@ struct SettingsView: View {
             }
 
             
-//            // MARK: - Session Goal Picker
-//            VStack(alignment: .leading, spacing: 4) {
-//                Text("Session Goal")
-//                    .font(.caption2)
-//                    .foregroundColor(.secondary)
-//
-//                Picker("Session Goal", selection: $sessionGoal) {
-//                    ForEach(sessionGoalOptions, id: \.self) { value in
-//                        Text("\(value) min").tag(value)
-//                    }
-//                }
-//                .pickerStyle(.segmented)
-//            }
+            // MARK: - Session Goal Picker
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Session Goal")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+
+                Picker("Session Goal", selection: $sessionGoal) {
+                    ForEach(sessionGoalOptions, id: \.self) { value in
+                        Text("\(value) min").tag(value)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+            
+            // MARK: - Break Duration Settings
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Break Duration Settings")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Break Multiplier")
+                        .font(.caption2)
+                    Picker("Break Multiplier", selection: $breakMultiplier) {
+                        ForEach(breakMultiplierOptions, id: \.self) { value in
+                            Text("\(Int(value * 100))%").tag(value)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Min Break")
+                            .font(.caption2)
+                        Picker("Min Break", selection: $minBreakMinutes) {
+                            ForEach(minBreakOptions, id: \.self) { value in
+                                Text("\(value)m").tag(value)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Max Break")
+                            .font(.caption2)
+                        Picker("Max Break", selection: $maxBreakMinutes) {
+                            ForEach(maxBreakOptions, id: \.self) { value in
+                                Text("\(value)m").tag(value)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                }
+            }
 
             // MARK: - Reset Button
             Divider()
@@ -99,6 +151,11 @@ struct SettingsView: View {
         UserDefaults.standard.set(false, forKey: "showStreaks")
         UserDefaults.standard.set(true, forKey: "playSounds")
         UserDefaults.standard.set(25, forKey: "sessionGoal")
+        UserDefaults.standard.set(false, forKey: "isTestingMode")
+        UserDefaults.standard.set(true, forKey: "resumeOnLaunch")
+        UserDefaults.standard.set(0.2, forKey: "breakMultiplier")
+        UserDefaults.standard.set(5, forKey: "minBreakMinutes")
+        UserDefaults.standard.set(20, forKey: "maxBreakMinutes")
     }
     
     // MARK: - Feedback Logic
