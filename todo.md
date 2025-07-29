@@ -3,11 +3,11 @@
 ## High Priority
 
 ### MVP Refinements
-- [ ] **Testing Mode Toggle**: Add UI control to enable/disable testing mode instead of hardcoded flag
-- [ ] **Session Goal Implementation**: Enable the commented session goal picker in SettingsView
-- [ ] **Resume on Launch Setting**: Add UI toggle for session restoration preference
-- [ ] **Break Duration Customization**: Allow users to customize break calculation parameters
-- [ ] **Sound Management**: Implement playSounds setting throughout the app (currently only in settings)
+- [x] **Testing Mode Toggle**: Add UI control to enable/disable testing mode instead of hardcoded flag
+- [x] **Session Goal Implementation**: Enable the commented session goal picker in SettingsView
+- [x] **Resume on Launch Setting**: Add UI toggle for session restoration preference
+- [x] **Break Duration Customization**: Allow users to customize break calculation parameters
+- [x] **Sound Management**: Implement playSounds setting throughout the app (currently only in settings)
 
 ### Bug Fixes & Polish
 - [ ] **Missing Asset Handling**: Improve error handling when character images are missing
@@ -114,8 +114,12 @@
 - ✅ Pet evolution with multiple stages
 - ✅ Menu bar integration and UI
 - ✅ Session persistence across app launches
-- ✅ Basic settings panel implementation
-- ✅ Testing mode for development
+- ✅ Comprehensive settings panel with advanced configuration
+- ✅ User-configurable testing mode
 - ✅ Asset-based character system
 - ✅ Streak calculation and statistics
 - ✅ UserDefaults-based data persistence
+- ✅ Session goal picker interface
+- ✅ Customizable break duration calculation (multiplier, min/max)
+- ✅ Resume on launch preference setting
+- ✅ Integrated sound management throughout app
