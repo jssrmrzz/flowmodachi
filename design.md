@@ -107,7 +107,7 @@ Flowmodachi combines productivity with playful gamification through a virtual pe
 - **Size**: Consistent sizing across all evolution stages
 - **Personality**: Animation patterns suggest different character types
 - **Visual Effects**: Stage 3 characters get special aura effects
-- **Missing Asset Handling**: Graceful fallback with clear error indication
+- **Missing Asset Handling**: Graceful fallback with clear error indication using system icons
 
 ## User Experience Patterns
 
@@ -127,6 +127,33 @@ Flowmodachi combines productivity with playful gamification through a virtual pe
 - **Comprehensive Options**: Essential customization plus advanced break configuration
 - **Smart Defaults**: Sensible settings that work for most users
 - **Feedback Integration**: Easy access to developer communication
+
+## Error States & Defensive UX
+
+### Graceful Degradation Principles
+- **Asset Failures**: System icons (questionmark.circle, exclamationmark.triangle) replace missing character artwork
+- **Placeholder Character System**: Fully functional fallback characters maintain app functionality when assets are missing
+- **Visual Consistency**: Fallback elements use system colors and maintain the same sizing as regular characters
+- **No User Disruption**: Asset failures are handled silently with appropriate fallbacks
+
+### Error Recovery Patterns
+- **State Consistency**: App automatically detects and corrects impossible state combinations (e.g., both flowing and on break)
+- **Timer Recovery**: Broken timer states automatically reset to safe defaults
+- **Settings Validation**: Invalid configuration values automatically clamped to safe ranges
+- **Data Integrity**: Corrupted persistence data automatically cleared and reset to defaults
+
+### Defensive Design Features
+- **Bounds Validation**: All numeric inputs (session times, break durations) validated within reasonable limits
+- **Asset Validation**: Character system validates image existence using global helper functions
+- **State Synchronization**: UI updates are coordinated to prevent inconsistent visual states
+- **Memory Management**: Proper cleanup prevents resource leaks that could degrade performance
+
+### Implementation Architecture Notes
+- **Global Functions**: Asset validation moved outside class scope for initialization safety
+- **SwiftUI Compatibility**: Settings use direct `@AppStorage` bindings without computed property wrappers
+- **Fallback Character System**: System icons (questionmark.circle, exclamationmark.triangle) provide consistent visual feedback for missing assets
+- **Direct UserDefaults**: Reset functionality uses `UserDefaults.standard.set()` for SwiftUI Button compatibility
+- **Validation Layer Separation**: Input validation occurs at consumption (FlowEngine) rather than UI layer
 - **Reset Options**: Clear path to restore defaults
 - **Testing Mode**: Developer-friendly option for reduced timers
 - **Break Customization**: Fine-grained control over break duration calculation

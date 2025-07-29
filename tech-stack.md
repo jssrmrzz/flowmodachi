@@ -117,6 +117,48 @@ User Input → View → ObservableObject → Business Logic → UserDefaults
 - **AppStorage Backed**: SwiftUI property wrappers for comprehensive settings
 - **Persistent Settings**: Automatic UserDefaults synchronization
 - **Default Values**: Fallback configuration values
+
+## Error Handling & Validation
+
+### Defensive Programming Patterns
+- **Bounds Checking**: All numeric inputs validated within safe ranges
+- **Asset Validation**: Runtime checking for missing images with fallback systems
+- **State Consistency**: Automatic detection and correction of invalid states
+- **Input Sanitization**: User settings validated and clamped to acceptable values
+
+### Performance & Reliability
+- **Timer Accuracy**: High-precision timing with Date-based calculations instead of simple counters
+- **Memory Management**: Proper cleanup patterns with deinit methods and weak references
+- **Graceful Degradation**: Fallback UI elements when resources are unavailable
+- **Data Integrity**: Persistence helpers validate data before saving and after loading
+
+### Error Recovery Mechanisms
+- **Asset Fallbacks**: System icons used when custom artwork is missing
+- **State Validation**: `validateState()` method corrects inconsistent app states
+- **Settings Recovery**: Invalid UserDefaults entries automatically cleaned up
+- **Timer Recovery**: Broken timer states automatically restored or reset
+
+## Compilation Strategies
+
+### Swift Language Constraints Solutions
+
+**Global Functions Pattern**:
+- **Purpose**: Avoid Swift initialization order restrictions
+- **Implementation**: Asset validation functions moved outside class scope
+- **Files**: `PetManager.swift` - `assetExists()`, `createFallbackCharacter()`
+- **Benefit**: Functions callable during object initialization without `self` context
+
+**SwiftUI Compatibility Patterns**:
+- **Challenge**: View immutability prevents computed property setters and mutating methods
+- **Solution**: Direct `@AppStorage` bindings with validation at consumption layer
+- **Reset Strategy**: Direct `UserDefaults.standard.set()` calls in Button closures
+- **Validation Layer**: Input bounds checking moved to `FlowEngine.suggestBreak()`
+
+**Initialization Safety Architecture**:
+- **Stored Properties First**: All `let` and `var` properties initialized before method calls
+- **Global Helpers**: Asset validation functions accessible without object instance
+- **Fallback System**: Placeholder characters created during initialization, not as computed properties
+- **Memory Management**: Proper initialization order ensures cleanup methods work correctly
 - **Break Configuration**: Customizable multiplier, minimum, and maximum break durations
 - **Session Settings**: Goal configuration and resume-on-launch preferences
 - **Audio Preferences**: Configurable sound notifications
