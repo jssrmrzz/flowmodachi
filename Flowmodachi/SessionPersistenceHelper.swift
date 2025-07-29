@@ -6,9 +6,12 @@ enum SessionPersistenceHelper {
 
     /// Save current flow session state to UserDefaults.
     static func saveSession(elapsedSeconds: Int) {
+        // Validate input bounds
+        let validElapsed = max(0, min(elapsedSeconds, 86400)) // 0 to 24 hours
+        
         let state: [String: Any] = [
             "timestamp": Date().timeIntervalSince1970,
-            "elapsed": elapsedSeconds
+            "elapsed": validElapsed
         ]
         UserDefaults.standard.set(state, forKey: persistenceKey)
     }
@@ -19,13 +22,24 @@ enum SessionPersistenceHelper {
               let timestamp = saved["timestamp"] as? TimeInterval,
               let savedElapsed = saved["elapsed"] as? Double,
               savedElapsed > 0 else {
+            clearSession() // Clean up invalid data
             return nil
         }
 
         let now = Date().timeIntervalSince1970
-        if now - timestamp <= maxResumeDelay {
-            print("✅ Resuming session after app launch with \(Int(savedElapsed))s")
-            return Int(savedElapsed)
+        let timeDiff = now - timestamp
+        
+        // Validate timestamp isn't too far in the future or past
+        guard timeDiff >= 0 && timeDiff <= maxResumeDelay * 2 else {
+            print("⚠️ Invalid timestamp detected, clearing session")
+            clearSession()
+            return nil
+        }
+        
+        if timeDiff <= maxResumeDelay {
+            let validElapsed = max(0, min(Int(savedElapsed), 86400))
+            print("✅ Resuming session after app launch with \(validElapsed)s")
+            return validElapsed
         } else {
             print("⚠️ Saved session too old; not restoring")
             clearSession()

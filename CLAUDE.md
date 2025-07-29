@@ -77,6 +77,61 @@ The app includes several testing and debug features:
 - Break state stored in UserDefaults via `BreakPersistenceHelper.swift`
 - Settings and preferences use UserDefaults
 
+### Reliability & Error Handling
+
+The app includes comprehensive error handling and reliability features:
+
+**Asset Fallback System**:
+- `PetManager` validates asset existence during initialization
+- Fallback character system with system icons for missing assets
+- Graceful evolution with asset validation and automatic fallbacks
+- `CharacterImageView` handles both regular images and placeholder system icons
+
+**Timer Accuracy & Validation**:
+- High-precision 0.1s timer intervals with Date-based accuracy calculations
+- Comprehensive bounds checking (24-hour max sessions, 1-hour max breaks)
+- Edge case handling for timer state transitions and restoration
+- Validation of all time values to prevent negative or extreme values
+
+**Memory Management**:
+- Proper timer cleanup with deinit methods and destruction state tracking
+- Weak reference patterns in timer closures to prevent retain cycles
+- Memory leak prevention with proper timer invalidation
+- Object lifecycle management with cleanup methods
+
+**State Synchronization**:
+- `validateState()` method detects and fixes inconsistencies automatically
+- `synchronizeUI()` ensures @Published properties trigger proper UI updates
+- State validation calls in all key methods (start, pause, reset, end)
+- Defensive state checking to prevent impossible state combinations
+
+**Settings Persistence**:
+- Input validation with proper bounds for all settings values
+- Enhanced persistence helpers with timestamp and data validation
+- Automatic cleanup of invalid UserDefaults data
+- Direct UserDefaults manipulation for reset functionality (SwiftUI compatibility)
+
+### Development Challenges & Solutions
+
+During the implementation of reliability features, several Swift and SwiftUI constraints were encountered and resolved:
+
+**Swift Initialization Safety**:
+- **Challenge**: Cannot call instance methods before all stored properties are initialized
+- **Solution**: Moved `assetExists()` and `createFallbackCharacter()` to global helper functions
+- **Location**: Global functions in `PetManager.swift` before class definition
+- **Benefit**: Initialization-safe asset validation without `self` context issues
+
+**SwiftUI View Immutability**:
+- **Challenge**: Cannot use computed properties with setters or mutating methods in SwiftUI Views
+- **Solution**: Direct `@AppStorage` bindings with validation moved to consumption layer
+- **Implementation**: `SettingsView.swift` uses standard bindings, validation in `FlowEngine.swift`
+- **Reset Logic**: Direct `UserDefaults.standard.set()` calls for settings reset
+
+**Architecture Evolution**:
+- **Iteration 1**: Computed properties with custom setters (failed - SwiftUI immutability)
+- **Iteration 2**: Static methods within class (failed - initialization order)
+- **Final Solution**: Global functions + direct UserDefaults + consumption-layer validation
+
 ### Platform Support
 
 Built for macOS with multi-platform support configured:

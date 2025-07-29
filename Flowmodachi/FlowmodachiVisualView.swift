@@ -50,35 +50,21 @@ struct FlowmodachiVisualView: View {
                 backgroundRing
                     .frame(width: 140, height: 140) // ✅ Ensure ring is same across stages
 
-                if characterImageExists {
-                    CharacterImageView(
-                        imageName: petManager.currentCharacter.imageName,
-                        characterId: petManager.currentCharacter.id,
-                        stage: petManager.currentCharacter.stage,
-                        wobble: animationManager.wobble,
-                        isHopping: animationManager.isHopping,
-                        isWiggling: animationManager.isWiggling,
-                        isBouncing: animationManager.isBouncing,
-                        isFloating: animationManager.isFloating,
-                        isBursting: isBursting,
-                        showGlowFlash: showGlowFlash
-                    )
-                    .transition(.opacity)
-                    .overlay(auraOverlay)
-                } else {
-                    Image(systemName: "questionmark.circle")
-                        .resizable()
-                        .scaledToFit()
-                        .foregroundColor(.gray)
-                        .frame(width: 36, height: 36)
-                        .overlay(
-                            Text("Missing\nArt")
-                                .font(.caption2)
-                                .multilineTextAlignment(.center)
-                                .foregroundColor(.red)
-                                .padding(.top, 30)
-                        )
-                }
+                CharacterImageView(
+                    imageName: petManager.currentCharacter.imageName,
+                    characterId: petManager.currentCharacter.id,
+                    stage: petManager.currentCharacter.stage,
+                    isPlaceholder: petManager.currentCharacter.isPlaceholder,
+                    wobble: animationManager.wobble,
+                    isHopping: animationManager.isHopping,
+                    isWiggling: animationManager.isWiggling,
+                    isBouncing: animationManager.isBouncing,
+                    isFloating: animationManager.isFloating,
+                    isBursting: isBursting,
+                    showGlowFlash: showGlowFlash
+                )
+                .transition(.opacity)
+                .overlay(auraOverlay)
 
                 StageTransitionOverlayView(
                     fromStage: fromStage,
@@ -159,9 +145,6 @@ struct FlowmodachiVisualView: View {
     }
 
     // MARK: - Visual Helpers
-    private var characterImageExists: Bool {
-        NSImage(named: petManager.currentCharacter.imageName) != nil
-    }
 
     private var backgroundRing: some View {
         BackgroundRingView(

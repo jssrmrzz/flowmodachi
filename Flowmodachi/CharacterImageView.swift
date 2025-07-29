@@ -6,6 +6,7 @@ struct CharacterImageView: View {
     let imageName: String
     let characterId: String
     let stage: Int
+    let isPlaceholder: Bool
 
     let wobble: Bool
     let isHopping: Bool
@@ -61,23 +62,32 @@ struct CharacterImageView: View {
             }
 
             // 🧬 Main Character
-            Image(imageName)
-                .resizable()
-                .interpolation(.none)
-                .scaledToFit()
-                .frame(width: characterSize, height: characterSize)
-                .rotationEffect(rotationAngle)
-                .scaleEffect(isBursting ? 1.3 : scaleAmount)
-                .offset(y: verticalOffset)
-                .opacity(fadeIn ? 1.0 : 0.0)
-                .animation(.easeInOut(duration: 0.4), value: wobble)
-                .animation(.easeInOut(duration: 0.3), value: isHopping)
-                .animation(.easeInOut(duration: 0.5), value: isWiggling)
-                .animation(.easeInOut(duration: 0.4), value: isBouncing)
-                .animation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true), value: isFloating)
-                .transition(.asymmetric(insertion: .opacity.combined(with: .scale), removal: .opacity))
-                .id(characterId)
-                .zIndex(3)
+            Group {
+                if isPlaceholder {
+                    Image(systemName: imageName)
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundColor(.secondary)
+                } else {
+                    Image(imageName)
+                        .resizable()
+                        .interpolation(.none)
+                        .scaledToFit()
+                }
+            }
+            .frame(width: characterSize, height: characterSize)
+            .rotationEffect(rotationAngle)
+            .scaleEffect(isBursting ? 1.3 : scaleAmount)
+            .offset(y: verticalOffset)
+            .opacity(fadeIn ? 1.0 : 0.0)
+            .animation(.easeInOut(duration: 0.4), value: wobble)
+            .animation(.easeInOut(duration: 0.3), value: isHopping)
+            .animation(.easeInOut(duration: 0.5), value: isWiggling)
+            .animation(.easeInOut(duration: 0.4), value: isBouncing)
+            .animation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true), value: isFloating)
+            .transition(.asymmetric(insertion: .opacity.combined(with: .scale), removal: .opacity))
+            .id(characterId)
+            .zIndex(3)
                 .onAppear {
                     fadeIn = false
                     withAnimation(.easeInOut(duration: 0.5)) {

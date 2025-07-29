@@ -13,6 +13,23 @@ struct SettingsView: View {
     @AppStorage("minBreakMinutes") private var minBreakMinutes: Int = 5
     @AppStorage("maxBreakMinutes") private var maxBreakMinutes: Int = 20
     
+    // MARK: - Validation Helpers
+    private func validatedSessionGoal(_ value: Int) -> Int {
+        max(15, min(value, 120)) // 15-120 minutes
+    }
+    
+    private func validatedBreakMultiplier(_ value: Double) -> Double {
+        max(0.1, min(value, 0.5)) // 10%-50%
+    }
+    
+    private func validatedMinBreak(_ value: Int) -> Int {
+        max(1, min(value, 30)) // 1-30 minutes
+    }
+    
+    private func validatedMaxBreak(_ value: Int, minValue: Int) -> Int {
+        max(minValue, min(value, 60)) // At least minBreak, max 60
+    }
+    
     @State private var showEmailFallback = false
     @State private var copied = false
     let fallbackEmail = "your.email@example.com"
@@ -147,15 +164,28 @@ struct SettingsView: View {
 
     // MARK: - Reset Logic
     private func resetToDefaults() {
+        // Clear all app data
         UserDefaults.standard.removeObject(forKey: "FlowmodachiSessions")
-        UserDefaults.standard.set(false, forKey: "showStreaks")
-        UserDefaults.standard.set(true, forKey: "playSounds")
+        UserDefaults.standard.removeObject(forKey: "FlowSessionState")
+        UserDefaults.standard.removeObject(forKey: "FlowBreakState")
+        UserDefaults.standard.removeObject(forKey: "currentCharacterID")
+        UserDefaults.standard.removeObject(forKey: "evolutionBreakCredits")
+        
+        // Reset settings to defaults using UserDefaults directly
+        UserDefaults.standard.set(true, forKey: "showStreaks")
+        UserDefaults.standard.set(true, forKey: "playSounds") 
         UserDefaults.standard.set(25, forKey: "sessionGoal")
+        UserDefaults.standard.set(false, forKey: "hasSeenTutorial")
         UserDefaults.standard.set(false, forKey: "isTestingMode")
         UserDefaults.standard.set(true, forKey: "resumeOnLaunch")
         UserDefaults.standard.set(0.2, forKey: "breakMultiplier")
         UserDefaults.standard.set(5, forKey: "minBreakMinutes")
         UserDefaults.standard.set(20, forKey: "maxBreakMinutes")
+        
+        // Force synchronization
+        UserDefaults.standard.synchronize()
+        
+        print("✅ Settings reset to defaults")
     }
     
     // MARK: - Feedback Logic
