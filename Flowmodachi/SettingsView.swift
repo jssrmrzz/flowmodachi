@@ -32,6 +32,7 @@ struct SettingsView: View {
     
     @State private var showEmailFallback = false
     @State private var copied = false
+    @State private var showResetSuccess = false
     let fallbackEmail = "your.email@example.com"
 
 
@@ -43,27 +44,44 @@ struct SettingsView: View {
 
     // MARK: - View
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 10) {
             
             // MARK: - Toggles
-            Toggle("Show Streaks", isOn: $showStreaks)
-            Toggle("Enable Sounds", isOn: $playSounds)
-            Toggle("Resume Session on Launch", isOn: $resumeOnLaunch)
-            Toggle("Testing Mode (Short Timers)", isOn: $isTestingMode)
-            
-            // MARK: - Reset Tutorial Button
-                        Button("Show Tutorial Again") {
-                            hasSeenTutorial = false
-                        }
-                        .font(.caption)
-            
-            // MARK: - Feedback Button
-            Button("Send Feedback") {
-                sendFeedbackEmail {
-                    showEmailFallback = true
-                }
+            VStack(alignment: .leading, spacing: 8) {
+                Toggle("Show Streaks", isOn: $showStreaks)
+                    .accessibilityHint("Shows or hides daily streak information in the main view")
+                    .font(.caption)
+                Toggle("Enable Sounds", isOn: $playSounds)
+                    .accessibilityHint("Enables or disables audio feedback during sessions")
+                    .font(.caption)
+                Toggle("Resume Session on Launch", isOn: $resumeOnLaunch)
+                    .accessibilityHint("Automatically continues your session when the app restarts")
+                    .font(.caption)
+                Toggle("Testing Mode (Short Timers)", isOn: $isTestingMode)
+                    .accessibilityHint("Uses shorter durations for testing purposes")
+                    .font(.caption)
             }
-            .font(.caption)
+            
+            // MARK: - Action Buttons
+            HStack(spacing: 12) {
+                Button("Show Tutorial Again") {
+                    hasSeenTutorial = false
+                }
+                .font(.caption2)
+                .buttonStyle(.bordered)
+                .controlSize(.mini)
+                .accessibilityHint("Shows the enhanced interactive tutorial again when you return to the app")
+                
+                Button("Send Feedback") {
+                    sendFeedbackEmail {
+                        showEmailFallback = true
+                    }
+                }
+                .font(.caption2)
+                .buttonStyle(.bordered)
+                .controlSize(.mini)
+                .accessibilityHint("Opens your email client to send feedback to the developer")
+            }
 
             // Optional fallback alert or inline message
             if showEmailFallback {
@@ -94,7 +112,7 @@ struct SettingsView: View {
 
             
             // MARK: - Session Goal Picker
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text("Session Goal")
                     .font(.caption2)
                     .foregroundColor(.secondary)
@@ -105,15 +123,18 @@ struct SettingsView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .controlSize(.mini)
+                .accessibilityLabel("Session goal duration")
+                .accessibilityHint("Sets your target session length in minutes")
             }
             
             // MARK: - Break Duration Settings
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text("Break Duration Settings")
                     .font(.caption2)
                     .foregroundColor(.secondary)
                 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text("Break Multiplier")
                         .font(.caption2)
                     Picker("Break Multiplier", selection: $breakMultiplier) {
@@ -122,10 +143,13 @@ struct SettingsView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .controlSize(.mini)
+                    .accessibilityLabel("Break duration multiplier")
+                    .accessibilityHint("Sets what percentage of your session time becomes break time")
                 }
                 
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
                         Text("Min Break")
                             .font(.caption2)
                         Picker("Min Break", selection: $minBreakMinutes) {
@@ -134,9 +158,12 @@ struct SettingsView: View {
                             }
                         }
                         .pickerStyle(.segmented)
+                        .controlSize(.mini)
+                        .accessibilityLabel("Minimum break duration")
+                        .accessibilityHint("Sets the shortest possible break time")
                     }
                     
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 2) {
                         Text("Max Break")
                             .font(.caption2)
                         Picker("Max Break", selection: $maxBreakMinutes) {
@@ -145,6 +172,9 @@ struct SettingsView: View {
                             }
                         }
                         .pickerStyle(.segmented)
+                        .controlSize(.mini)
+                        .accessibilityLabel("Maximum break duration")
+                        .accessibilityHint("Sets the longest possible break time")
                     }
                 }
             }
@@ -153,13 +183,29 @@ struct SettingsView: View {
             Divider()
 
             Button(role: .destructive) {
-                resetToDefaults()
+                withAnimation {
+                    resetToDefaults()
+                    showResetSuccess = true
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        showResetSuccess = false
+                    }
+                }
             } label: {
                 Label("Reset App to Defaults", systemImage: "arrow.counterclockwise")
             }
             .font(.caption)
+            .accessibilityLabel("Reset app to defaults")
+            .accessibilityHint("Clears all data and resets settings to original values")
+            .buttonPressAnimation()
+            
+            // Success feedback
+            if showResetSuccess {
+                SuccessFeedbackView(message: "Settings reset successfully!")
+                    .transition(EnhancedTransitions.bounceIn)
+            }
         }
-        .padding(12)
+        .padding(8)
     }
 
     // MARK: - Reset Logic

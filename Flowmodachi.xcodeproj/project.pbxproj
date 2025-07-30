@@ -30,7 +30,7 @@
 		2F2FCBF02DA7057D003C3733 /* CLAUDE.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
 		2F2FCBF12DA7057D003C3733 /* requirements.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = requirements.md; sourceTree = "<group>"; };
 		2F2FCBF22DA7057D003C3733 /* todo.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = todo.md; sourceTree = "<group>"; };
-		2F2FCBF32DA7057D003C3733 /* tech-stack.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = tech-stack.md; sourceTree = "<group>"; };
+		2F2FCBF32DA7057D003C3733 /* tech-stack.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = "tech-stack.md"; sourceTree = "<group>"; };
 		2F2FCBF42DA7057D003C3733 /* design.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = design.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 

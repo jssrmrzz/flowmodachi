@@ -41,14 +41,16 @@ Flowmodachi combines productivity with playful gamification through a virtual pe
 
 ### Component Hierarchy
 1. **Header** - App title and info button
-2. **Tutorial/Status Banners** - Contextual information
-3. **Statistics** - Optional session data display
-4. **Advanced Settings** - Break duration and testing mode controls
-5. **Streak Information** - User engagement metrics
-6. **Session Metrics** - Current session data
-7. **Pet Visual** - Central character display
-8. **Session Controls** - Primary interaction buttons
-9. **Rebirth Controls** - Pet management actions
+2. **Tutorial/Status Banners** - Contextual onboarding and information
+3. **Error Displays** - Inline and modal error handling
+4. **Loading States** - Progress indicators and transition feedback
+5. **Statistics** - Optional session data display
+6. **Advanced Settings** - Break duration and testing mode controls
+7. **Streak Information** - User engagement metrics
+8. **Session Metrics** - Current session data
+9. **Pet Visual** - Central character display with evolution animations
+10. **Session Controls** - Primary interaction buttons with enhanced feedback
+11. **Rebirth Controls** - Pet management actions
 
 ## Interactive Elements
 
@@ -112,9 +114,11 @@ Flowmodachi combines productivity with playful gamification through a virtual pe
 ## User Experience Patterns
 
 ### First-Time Experience
-- **Tutorial Banner**: Friendly introduction with clear next steps
-- **Progressive Disclosure**: Features revealed as users engage
-- **No Onboarding Screens**: Immediate value with contextual guidance
+- **Tutorial System**: Comprehensive 7-step guided onboarding
+- **Contextual Guidance**: Step-by-step feature introduction with visual highlights
+- **Progress Tracking**: Visual progress indicators with navigation controls
+- **Skip Option**: Allow experienced users to bypass tutorial
+- **Reset Capability**: Tutorial can be restarted from settings
 
 ### Session Flow
 1. **Start Session**: Single-tap initiation
@@ -130,6 +134,20 @@ Flowmodachi combines productivity with playful gamification through a virtual pe
 
 ## Error States & Defensive UX
 
+### Comprehensive Error Handling System
+- **Error Classification**: Structured error types with localized descriptions and recovery suggestions
+- **Modal Error Alerts**: Full-screen error dialogs for critical issues with retry capabilities
+- **Inline Error Display**: Subtle, contextual error messages for non-critical issues
+- **Error Recovery**: Smart retry mechanisms with user-friendly recovery suggestions
+- **Error Logging**: Detailed console logging for debugging while maintaining user privacy
+
+### Loading States & Transitions
+- **Visual Feedback**: Loading spinners and progress indicators for operations
+- **Smooth Transitions**: Enhanced animation system with scale, fade, and slide effects
+- **Success Confirmation**: Visual success feedback with checkmarks and positive messaging
+- **Button States**: Press animations and loading states for interactive elements
+- **Transition Management**: Coordinated state transitions prevent UI inconsistencies
+
 ### Graceful Degradation Principles
 - **Asset Failures**: System icons (questionmark.circle, exclamationmark.triangle) replace missing character artwork
 - **Placeholder Character System**: Fully functional fallback characters maintain app functionality when assets are missing
@@ -141,6 +159,13 @@ Flowmodachi combines productivity with playful gamification through a virtual pe
 - **Timer Recovery**: Broken timer states automatically reset to safe defaults
 - **Settings Validation**: Invalid configuration values automatically clamped to safe ranges
 - **Data Integrity**: Corrupted persistence data automatically cleared and reset to defaults
+
+### Tutorial System Design
+- **Step-by-Step Guidance**: 7-step onboarding covering all major features
+- **Visual Highlighting**: Subtle border animations and background tints for target areas
+- **Progress Indicators**: Dot-based progress tracking with current step indication
+- **Navigation Controls**: Previous/next buttons with contextual labeling ("Done" for final step)
+- **Contextual Display**: Tutorial steps appear only when relevant UI elements are visible
 
 ### Defensive Design Features
 - **Bounds Validation**: All numeric inputs (session times, break durations) validated within reasonable limits
@@ -232,10 +257,14 @@ Flowmodachi combines productivity with playful gamification through a virtual pe
 
 ### Reusable Elements
 - **Progress Rings**: Circular progress indicators
-- **Character Display**: Consistent pet presentation
+- **Character Display**: Consistent pet presentation with fallback support
 - **Metric Cards**: Statistics and information display
-- **Action Buttons**: Standardized interaction elements
+- **Action Buttons**: Standardized interaction elements with press animations
 - **Status Banners**: Contextual information presentation
+- **Tutorial Banners**: Compact onboarding guidance with progress indicators
+- **Error Displays**: Both modal alerts and inline error messages
+- **Loading States**: Consistent loading indicators and transition animations
+- **Success Feedback**: Positive confirmation messaging
 - **Settings Groups**: Organized configuration sections with clear hierarchy
 - **Parameter Selectors**: Consistent picker styling for numerical options
 

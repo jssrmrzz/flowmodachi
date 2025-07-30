@@ -14,6 +14,7 @@ struct MenuBarContentView: View {
 
     // MARK: - UI Toggles
     @State private var showStats = false
+    @State private var showSettings = false
     @AppStorage("showStreaks") private var showStreaks: Bool = true
     @AppStorage("debugMoodOverride") private var debugMoodOverride: String = "none"
     @AppStorage("debugMissedYesterday") private var debugMissedYesterday: Bool = false
@@ -21,69 +22,142 @@ struct MenuBarContentView: View {
     @AppStorage("hasSeenTutorial") private var hasSeenTutorial: Bool = false
     @State private var showConfetti = false
     @State private var hasStartedSession = false
+    @StateObject private var tutorialManager = TutorialManager()
 
     // MARK: - View Body
     var body: some View {
         ZStack {
-            VStack(spacing: 16) {
-                header
-
-                // MARK: Tutorial Banner
-                if !hasSeenTutorial {
-                    tutorialBanner
-                }
-
-                if didMissYesterday {
-                    missedYesterdayBanner
-                }
-
-                if showStats {
-                    SessionSummaryView()
-                }
-
-                DebugToolsView()
-                    .environmentObject(sessionManager)
-                    .padding(.top, 4)
-
-                if showStreaks {
-                    StreakView(sessions: sessionManager.sessions)
-                }
-
-                SessionMetricsView()
-                    .environmentObject(sessionManager)
-
-                FlowmodachiVisualView(
-                    elapsedSeconds: flowEngine.elapsedSeconds,
-                    isOnBreak: flowEngine.isOnBreak,
-                    breakSecondsRemaining: flowEngine.breakSecondsRemaining,
-                    breakTotalSeconds: flowEngine.breakTotalDuration
-                )
-                .environmentObject(evolutionTracker)
-
-                SessionControlsView()
-                    .environmentObject(flowEngine)
-
-                RebirthButtonView(triggerConfetti: {
-                    withAnimation {
-                        showConfetti = true
+            if showSettings {
+                // Settings Panel
+                VStack(spacing: 12) {
+                    header
+                    
+                    ScrollView {
+                        SettingsView()
                     }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 4.5) {
+                    .frame(maxHeight: 320) // Optimized for 420px popover
+                }
+                .padding()
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            } else {
+                // Main Content
+                VStack(spacing: 16) {
+                    header
+                        .tutorialHighlight(
+                            when: tutorialManager.shouldShowTutorial(for: .settings),
+                            tutorialManager: tutorialManager,
+                            targetArea: .settings
+                        )
+
+                    // Tutorial banner (replaces overlay approach)
+                    if tutorialManager.isShowingTutorial {
+                        TutorialBannerView(tutorialManager: tutorialManager)
+                            .animation(.easeInOut(duration: 0.3), value: tutorialManager.currentStep)
+                    }
+
+                    // Error handling for inline errors
+                    if flowEngine.errorHandler.isShowingError,
+                       let error = flowEngine.errorHandler.currentError {
+                        InlineErrorView(
+                            error: error,
+                            onDismiss: {
+                                flowEngine.errorHandler.dismissError()
+                            },
+                            onRetry: error.canRetry ? {
+                                switch error {
+                                case .timerStartFailed:
+                                    flowEngine.startFlowTimer()
+                                case .breakTimerFailed:
+                                    flowEngine.suggestBreak()
+                                default:
+                                    break
+                                }
+                            } : nil
+                        )
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+
+                    if didMissYesterday && !tutorialManager.isShowingTutorial {
+                        missedYesterdayBanner
+                    }
+
+                    if showStats && !tutorialManager.isShowingTutorial {
+                        SessionSummaryView()
+                    }
+
+                    DebugToolsView()
+                        .environmentObject(sessionManager)
+                        .padding(.top, 4)
+
+                    if showStreaks && !tutorialManager.isShowingTutorial {
+                        StreakView(sessions: sessionManager.sessions)
+                    }
+
+                    SessionMetricsView()
+                        .environmentObject(sessionManager)
+
+                    FlowmodachiVisualView(
+                        elapsedSeconds: flowEngine.elapsedSeconds,
+                        isOnBreak: flowEngine.isOnBreak,
+                        breakSecondsRemaining: flowEngine.breakSecondsRemaining,
+                        breakTotalSeconds: flowEngine.breakTotalDuration
+                    )
+                    .environmentObject(evolutionTracker)
+                    .tutorialHighlight(
+                        when: tutorialManager.shouldShowTutorial(for: .petArea),
+                        tutorialManager: tutorialManager,
+                        targetArea: .petArea
+                    )
+
+                    SessionControlsView()
+                        .environmentObject(flowEngine)
+                        .tutorialHighlight(
+                            when: tutorialManager.shouldShowTutorial(for: .startButton, isOnBreak: flowEngine.isOnBreak) ||
+                                  tutorialManager.shouldShowTutorial(for: .timer, isOnBreak: flowEngine.isOnBreak) ||
+                                  tutorialManager.shouldShowTutorial(for: .breakControls, isOnBreak: flowEngine.isOnBreak),
+                            tutorialManager: tutorialManager,
+                            targetArea: .startButton
+                        )
+
+                    RebirthButtonView(triggerConfetti: {
                         withAnimation {
-                            showConfetti = false
+                            showConfetti = true
                         }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 4.5) {
+                            withAnimation {
+                                showConfetti = false
+                            }
+                        }
+                    })
+                    .environmentObject(petManager)
+                }
+                .padding()
+                .transition(.move(edge: .leading).combined(with: .opacity))
+                .trackSessionLifecycleChanges(using: flowEngine)
+                .onChange(of: flowEngine.elapsedSeconds) {
+                    if flowEngine.elapsedSeconds == 1 {
+                        hasStartedSession = true
                     }
-                })
-                .environmentObject(petManager)
-            }
-            .padding()
-            .trackSessionLifecycleChanges(using: flowEngine)
-            .onChange(of: flowEngine.elapsedSeconds) {
-                if flowEngine.elapsedSeconds == 1 {
-                    hasStartedSession = true
                 }
             }
+        }
+        .frame(width: 280)
+        .animation(.easeInOut(duration: 0.4), value: showSettings)
+        .onAppear {
+            if !hasSeenTutorial && !tutorialManager.isCompleted {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    tutorialManager.startTutorial()
+                }
+            }
+        }
+        .onChange(of: tutorialManager.isShowingTutorial) { isShowing in
+            if isShowing && showSettings {
+                withAnimation {
+                    showSettings = false
+                }
+            }
+        }
 
-            .frame(width: 280)
 
             if showConfetti {
                 ConfettiView()
@@ -91,21 +165,62 @@ struct MenuBarContentView: View {
                     .zIndex(10)
             }
         }
-    }
 
     // MARK: - Subviews
 
     private var header: some View {
         HStack {
-            Text("Flowmodachi")
-                .font(.title2)
-                .fontWeight(.semibold)
-            Spacer()
-            Button(action: { withAnimation { showStats.toggle() } }) {
-                Image(systemName: "info.circle")
-                    .foregroundColor(.gray)
+            if showSettings {
+                Button(action: { withAnimation { showSettings = false } }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                    .font(.caption)
+                    .foregroundColor(.accentColor)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Back to main view")
+                .accessibilityHint("Returns to the pet and session view")
+                
+                Spacer()
+                
+                Text("Settings")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                // Invisible spacer for balance
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left")
+                    Text("Back")
+                }
+                .font(.caption)
+                .opacity(0)
+            } else {
+                Text("Flowmodachi")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                Spacer()
+                
+                Button(action: { withAnimation { showStats.toggle() } }) {
+                    Image(systemName: "info.circle")
+                        .foregroundColor(.gray)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(showStats ? "Hide session statistics" : "Show session statistics")
+                .accessibilityHint("Toggles display of detailed session information")
+                
+                Button(action: { withAnimation { showSettings = true } }) {
+                    Image(systemName: "gearshape")
+                        .foregroundColor(.gray)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open settings")
+                .accessibilityHint("Opens the app settings panel")
+                .disabled(tutorialManager.isShowingTutorial)
             }
-            .buttonStyle(.plain)
         }
     }
 
@@ -119,32 +234,6 @@ struct MenuBarContentView: View {
             .transition(.opacity)
     }
 
-    private var tutorialBanner: some View {
-        VStack(spacing: 6) {
-            Text("👋 Welcome to Flowmodachi!")
-                .font(.caption)
-                .fontWeight(.semibold)
-                .multilineTextAlignment(.center)
-
-            Text("Start a focus session to help your egg evolve. Take breaks to grow your Flowmodachi! Send Feedback by Right Clicking the menu bar icon and selecting Settings.")
-                .font(.caption2)
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Button("Got it!") {
-                withAnimation {
-                    hasSeenTutorial = true
-                }
-            }
-            .font(.caption2)
-            .buttonStyle(.borderedProminent)
-        }
-        .padding(10)
-        .background(Color.accentColor.opacity(0.1))
-        .cornerRadius(10)
-        .transition(.move(edge: .top).combined(with: .opacity))
-    }
 
     // MARK: - State Logic
 

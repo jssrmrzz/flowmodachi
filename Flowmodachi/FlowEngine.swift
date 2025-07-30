@@ -15,6 +15,7 @@ class FlowEngine: ObservableObject {
     let sessionManager: SessionManager
     let evolutionTracker: EvolutionTracker
     let petManager: PetManager
+    @Published var errorHandler = ErrorHandler()
 
     // MARK: - Private State
     private var timer: Timer?
@@ -74,27 +75,35 @@ class FlowEngine: ObservableObject {
     func startFlowTimer() {
         guard !isFlowing else { return } // Prevent duplicate timers
         
-        validateState() // Ensure clean state before starting
-        
-        isFlowing = true
-        sessionCountedToday = false
-        sessionStartTime = Date()
-        lastUpdateTime = sessionStartTime ?? Date()
-        
-        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] timer in
-            guard let self = self, !self.isDestroying else {
-                timer.invalidate()
-                return
+        do {
+            try validateState() // Ensure clean state before starting
+            
+            isFlowing = true
+            sessionCountedToday = false
+            sessionStartTime = Date()
+            lastUpdateTime = sessionStartTime ?? Date()
+            
+            timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] timer in
+                guard let self = self, !self.isDestroying else {
+                    timer.invalidate()
+                    return
+                }
+                self.updateFlowTimer()
             }
-            self.updateFlowTimer()
+            
+            // Ensure timer runs on main thread and common run loop modes
+            if let timer = timer {
+                RunLoop.main.add(timer, forMode: .common)
+            } else {
+                throw NSError(domain: "FlowEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "Timer creation failed"])
+            }
+            
+            synchronizeUI()
+            
+        } catch {
+            errorHandler.handleError(.timerStartFailed)
+            isFlowing = false // Reset state on failure
         }
-        
-        // Ensure timer runs on main thread and common run loop modes
-        if let timer = timer {
-            RunLoop.main.add(timer, forMode: .common)
-        }
-        
-        synchronizeUI()
     }
     
     private func updateFlowTimer() {
@@ -129,7 +138,7 @@ class FlowEngine: ObservableObject {
             SessionPersistenceHelper.saveSession(elapsedSeconds: elapsedSeconds)
         }
         
-        validateState()
+        try? validateState()
         synchronizeUI()
     }
 
@@ -254,7 +263,7 @@ class FlowEngine: ObservableObject {
         playBreakEndSound()
         recordSessionIfEligible()
         
-        validateState()
+        try? validateState()
         synchronizeUI()
     }
 
@@ -269,7 +278,7 @@ class FlowEngine: ObservableObject {
     // MARK: - State Synchronization
     
     /// Validates and synchronizes internal state consistency
-    func validateState() {
+    func validateState() throws {
         // Defensive state checking to prevent inconsistencies
         
         // Can't be both flowing and on break
@@ -279,6 +288,7 @@ class FlowEngine: ObservableObject {
             breakTimer?.invalidate()
             breakTimer = nil
             BreakPersistenceHelper.clearBreak()
+            throw NSError(domain: "FlowEngine", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid session state detected"])
         }
         
         // Timer existence should match state

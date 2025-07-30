@@ -13,6 +13,7 @@ struct RebirthButtonView: View {
                     .font(.caption)
                     .multilineTextAlignment(.center)
                     .foregroundColor(.secondary)
+                    .accessibilityLabel("Your Flowmodachi has reached its Final Form!")
 
                 Button("Rebirth & Start New Egg") {
                     withAnimation {
@@ -21,6 +22,8 @@ struct RebirthButtonView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+                .accessibilityLabel("Rebirth and start new egg")
+                .accessibilityHint("Resets your evolved pet and starts over with a new random egg")
                 .padding(.top, 4)
             }
             .padding(.top, 12)

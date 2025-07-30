@@ -1,6 +1,49 @@
 import Cocoa
 import SwiftUI
 
+// MARK: - Custom Hosting Controller for Key Handling
+class KeyHandlingHostingController<RootView: View>: NSHostingController<RootView> {
+    private weak var flowEngine: FlowEngine?
+    
+    init(rootView: RootView, flowEngine: FlowEngine) {
+        self.flowEngine = flowEngine
+        super.init(rootView: rootView)
+    }
+    
+    @objc required dynamic init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 49: // Space bar
+            handleSpacebarPress()
+        case 53: // Escape key
+            handleEscapePress()
+        default:
+            super.keyDown(with: event)
+        }
+    }
+    
+    private func handleSpacebarPress() {
+        guard let flowEngine = flowEngine else { return }
+        
+        if flowEngine.isOnBreak {
+            return // Space doesn't do anything during break
+        }
+        
+        if flowEngine.isFlowing {
+            flowEngine.pauseFlowTimer()
+        } else {
+            flowEngine.startFlowTimer()
+        }
+    }
+    
+    private func handleEscapePress() {
+        view.window?.orderOut(nil)
+    }
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
@@ -26,6 +69,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         setupStatusItem()
         setupPopover()
+        setupKeyboardShortcuts()
     }
 
     // MARK: - Menu Bar Setup
@@ -43,7 +87,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupPopover() {
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 280, height: 360)
+        popover.contentSize = NSSize(width: 280, height: 420)
         popover.behavior = .transient
 
         let contentView = MenuBarContentView()
@@ -52,7 +96,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .environmentObject(evolutionTracker)
             .environmentObject(petManager)
 
-        popover.contentViewController = NSHostingController(rootView: contentView)
+        popover.contentViewController = KeyHandlingHostingController(rootView: contentView, flowEngine: flowEngine)
+    }
+    
+    private func setupKeyboardShortcuts() {
+        // Global shortcut for start/pause flow
+        let startPauseShortcut = NSMenuItem()
+        startPauseShortcut.title = "Toggle Flow Session"
+        startPauseShortcut.keyEquivalent = "f"
+        startPauseShortcut.keyEquivalentModifierMask = [.command, .shift]
+        startPauseShortcut.target = self
+        startPauseShortcut.action = #selector(toggleFlowSession)
+        
+        // Create application menu to hold shortcuts
+        let mainMenu = NSMenu()
+        let appMenuItem = NSMenuItem()
+        let appMenu = NSMenu()
+        
+        appMenu.addItem(startPauseShortcut)
+        appMenu.addItem(.separator())
+        appMenu.addItem(NSMenuItem(title: "Quit Flowmodachi", action: #selector(quitApp), keyEquivalent: "q"))
+        
+        appMenuItem.submenu = appMenu
+        mainMenu.addItem(appMenuItem)
+        NSApp.mainMenu = mainMenu
     }
 
     // MARK: - Click Handling
@@ -67,8 +134,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showRightClickMenu() {
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ","))
-        menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Flowmodachi", action: #selector(quitApp), keyEquivalent: "q"))
         statusItem.menu = menu
 
@@ -89,23 +154,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             popover.contentViewController?.view.window?.becomeKey()
         }
     }
+    
+    @objc private func toggleFlowSession() {
+        if flowEngine.isFlowing {
+            flowEngine.pauseFlowTimer()
+        } else if !flowEngine.isOnBreak {
+            flowEngine.startFlowTimer()
+        }
+    }
 
     @objc private func quitApp() {
         NSApp.terminate(nil)
-    }
-
-    @objc private func openSettings() {
-        let settingsWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 300, height: 180),
-            styleMask: [.titled, .closable],
-            backing: .buffered,
-            defer: false
-        )
-
-        settingsWindow.center()
-        settingsWindow.title = "Settings"
-        settingsWindow.isReleasedWhenClosed = false
-        settingsWindow.contentView = NSHostingView(rootView: SettingsView())
-        settingsWindow.makeKeyAndOrderFront(nil)
     }
 }

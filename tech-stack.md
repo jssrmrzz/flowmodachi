@@ -63,6 +63,8 @@ User Input → View → ObservableObject → Business Logic → UserDefaults
 - **SessionManager**: Data persistence and analytics
 - **PetManager**: Character evolution and asset management
 - **EvolutionTracker**: Break credit system
+- **TutorialManager**: Onboarding system and step navigation
+- **ErrorHandler**: Centralized error management and recovery
 
 ### Data Persistence Layer
 - **UserDefaults**: Primary storage mechanism
@@ -74,6 +76,9 @@ User Input → View → ObservableObject → Business Logic → UserDefaults
 - **SwiftUI Views**: Declarative UI components
 - **Asset Catalog**: Image and resource management
 - **Custom Views**: Specialized components (ConfettiView, AuraRingView)
+- **Error Components**: ErrorAlertView, InlineErrorView, ErrorBoundary modifier
+- **Loading Components**: LoadingStateView, SuccessFeedbackView, enhanced transitions
+- **Tutorial Components**: TutorialBannerView, tutorial highlighting system
 
 ## Development Practices
 
@@ -119,6 +124,27 @@ User Input → View → ObservableObject → Business Logic → UserDefaults
 - **Default Values**: Fallback configuration values
 
 ## Error Handling & Validation
+
+### Comprehensive Error System Architecture
+- **Error Classification**: Structured `FlowmodachiError` enum with localized descriptions
+- **Error Handler**: Centralized `ErrorHandler` class managing error state and recovery
+- **Modal Error Display**: Full-screen error alerts with retry capabilities
+- **Inline Error Display**: Contextual error messages for non-critical issues
+- **Safe Operation Wrapper**: Generic function for safe operation execution with fallbacks
+
+### Tutorial System Architecture
+- **Tutorial Manager**: State management for 7-step onboarding process
+- **Step Navigation**: Previous/next controls with progress tracking
+- **Contextual Display**: Tutorial steps shown only when relevant UI is visible
+- **Visual Highlighting**: Border animations and background tints for target areas
+- **Persistence**: Tutorial completion state stored in UserDefaults
+
+### Loading States & Transitions
+- **Enhanced Animations**: Scale, fade, slide, and bounce transition effects
+- **Loading Indicators**: Progress spinners and state feedback for operations
+- **Success Feedback**: Visual confirmation with checkmarks and positive messaging
+- **Button Press Effects**: Scale and opacity animations for tactile feedback
+- **Transition Coordination**: Prevents UI inconsistencies during state changes
 
 ### Defensive Programming Patterns
 - **Bounds Checking**: All numeric inputs validated within safe ranges
